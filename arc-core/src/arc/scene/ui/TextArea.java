@@ -215,14 +215,14 @@ public class TextArea extends TextField{
 
     @Override
     protected void drawText(Font font, float x, float y){
-        boolean had = font.getData().markupEnabled;
-        font.getData().markupEnabled = false;
+        boolean had = font.getData().retainMarkup;
+        font.getData().retainMarkup = true;
         float offsetY = 0;
         for(int i = firstLineShowing * 2; i < (firstLineShowing + linesShowing) * 2 && i < linesBreak.size; i += 2){
             font.draw(displayText, x, y + offsetY, linesBreak.items[i], linesBreak.items[i + 1], 0, Align.left, false);
             offsetY -= font.getLineHeight();
         }
-        font.getData().markupEnabled = had;
+        font.getData().retainMarkup = had;
     }
 
     @Override
@@ -247,7 +247,8 @@ public class TextArea extends TextField{
             int lastSpace = 0;
             char lastCharacter;
             GlyphLayout layout = Pools.obtain(GlyphLayout.class, GlyphLayout::new);
-            layout.ignoreMarkup = true;
+            boolean had = font.getData().retainMarkup;
+            font.getData().retainMarkup = true;
             for(int i = 0; i < text.length(); i++){
                 lastCharacter = text.charAt(i);
                 if(lastCharacter == '\n' || lastCharacter == '\r'){
@@ -268,6 +269,7 @@ public class TextArea extends TextField{
                     }
                 }
             }
+            font.getData().retainMarkup = had;
             Pools.free(layout);
             // Add last line
             if(lineStart < text.length()){

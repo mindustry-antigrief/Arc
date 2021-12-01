@@ -98,6 +98,7 @@ public class GlyphLayout implements Poolable{
         Pool<Color> colorPool = Pools.get(Color.class, Color::new);
 
         int runStart = start;
+        int skip = 0;
         outer:
         while(true){
             // Each run is delimited by newline or left square bracket.
@@ -119,7 +120,12 @@ public class GlyphLayout implements Poolable{
                             int length = parseColorMarkup(str, start, end, colorPool);
                             if(length >= 0){
                                 runEnd = start - 1;
-                                start += length + 1;
+                                if(fontData.retainMarkup){
+                                    start--;
+                                    skip = length + 2;
+                                }else{
+                                    start += length + 1;
+                                }
                                 nextColor = colorStack.peek();
                             }else if(length == -2){
                                 start++; // Skip first of "[[" escape sequence.
@@ -270,6 +276,10 @@ public class GlyphLayout implements Poolable{
 
                 runStart = start;
                 color = nextColor;
+            }
+            if(skip > 0){
+                start += skip;
+                skip = 0;
             }
         }
         width = Math.max(width, x);

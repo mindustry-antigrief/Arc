@@ -52,7 +52,7 @@ public class TextField extends Element implements Disableable{
     /** Special field containing implementation-specific data for IME support. */
     public Object imeData;
 
-    protected final GlyphLayout layout = new GlyphLayout(true);
+    protected final GlyphLayout layout = new GlyphLayout(false);
     protected final FloatSeq glyphPositions = new FloatSeq();
     protected String text;
     protected int cursor, selectionStart;
@@ -395,10 +395,10 @@ public class TextField extends Element implements Disableable{
     }
 
     protected void drawText(Font font, float x, float y){
-        boolean had = font.getData().markupEnabled;
-        font.getData().markupEnabled = false;
+        boolean had = font.getData().retainMarkup;
+        font.getData().retainMarkup = true;
         font.draw(displayText, x + textOffset, y, visibleTextStart, visibleTextEnd, 0, Align.left, false);
-        font.getData().markupEnabled = had;
+        font.getData().retainMarkup = had;
     }
 
     protected void drawCursor(Drawable cursorPatch, Font font, float x, float y){
@@ -431,17 +431,20 @@ public class TextField extends Element implements Disableable{
             displayText = passwordBuffer;
         }else
             displayText = newDisplayText;
-
+        boolean had = data.retainMarkup;
+        data.retainMarkup = true;
         layout.setText(font, displayText.toString().replace('\n', ' ').replace('\r', ' '));
+        data.retainMarkup = had;
         glyphPositions.clear();
         float x = 0;
         if(layout.runs.size > 0){
-            GlyphRun run = layout.runs.first();
-            FloatSeq xAdvances = run.xAdvances;
-            fontOffset = xAdvances.first();
-            for(int i = 1, n = xAdvances.size; i < n; i++){
-                glyphPositions.add(x);
-                x += xAdvances.get(i);
+            fontOffset = layout.runs.first().xAdvances.first();
+            for(int i = 0, n = layout.runs.size; i < n; i++){
+                FloatSeq xAdvances = layout.runs.get(i).xAdvances;
+                for(int ii = 1, nn = xAdvances.size; ii < nn; ii++){
+                    glyphPositions.add(x);
+                    x += xAdvances.get(ii);
+                }
             }
         }else{
             fontOffset = 0;
@@ -744,6 +747,14 @@ public class TextField extends Element implements Disableable{
         if(cursorPosition < 0) throw new IllegalArgumentException("cursorPosition must be >= 0");
         clearSelection();
         cursor = Math.min(cursorPosition, text.length());
+    }
+
+    public boolean markup(){
+        return !layout.ignoreMarkup;
+    }
+
+    public void markup(boolean useMarkup){
+        layout.ignoreMarkup = !useMarkup;
     }
 
     @Override

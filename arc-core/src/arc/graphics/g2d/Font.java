@@ -516,6 +516,7 @@ public class Font implements Disposable{
         public float blankLineScale = 1;
         public float scaleX = 1, scaleY = 1;
         public boolean markupEnabled;
+        public boolean retainMarkup = false; // Whether or not to keep the physical placement of markup tags instead of not showing them
         /**
          * The amount to add to the glyph X position when drawing a cursor between glyphs. This field is not set by the BMFont
          * file, it needs to be set manually depending on how the glyphs are rendered on the backing textures.
@@ -849,7 +850,7 @@ public class Font implements Disposable{
          * @param lastGlyph The glyph immediately before this run, or null if this is run is the first on a line of text.
          */
         public void getGlyphs(GlyphRun run, CharSequence str, int start, int end, Glyph lastGlyph){
-            boolean markupEnabled = this.markupEnabled;
+            boolean replaceMarkup = this.markupEnabled && !retainMarkup;
             float scaleX = this.scaleX;
             Glyph missingGlyph = this.missingGlyph;
             Seq<Glyph> glyphs = run.glyphs;
@@ -879,7 +880,7 @@ public class Font implements Disposable{
                 lastGlyph = glyph;
 
                 // "[[" is an escaped left square bracket, skip second character.
-                if(markupEnabled && ch == '[' && start < end && str.charAt(start) == '[') start++;
+                if(replaceMarkup && ch == '[' && start < end && str.charAt(start) == '[') start++;
             }
             if(lastGlyph != null){
                 float lastGlyphWidth = lastGlyph.fixedWidth ? lastGlyph.xadvance * scaleX
