@@ -597,7 +597,7 @@ public class AssetManager implements Disposable{
         // if the task has been cancelled or has finished loading
         if(complete){
             done.put(task.assetDesc.file.name(), Time.timeSinceNanos(task.startTime) / (float)Time.nanosPerMilli);
-            Log.info("@ in @ms", task.assetDesc.file.name(), Time.timeSinceNanos(task.startTime) / (float)Time.nanosPerMilli);
+            // Log.info("@ in @ms", task.assetDesc.file.name(), Time.timeSinceNanos(task.startTime) / (float)Time.nanosPerMilli);
             // increase the number of loaded assets and pop the task from the stack
             if(tasks.size == 1){
                 loaded++;
