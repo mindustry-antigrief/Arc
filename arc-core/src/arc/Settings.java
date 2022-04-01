@@ -24,6 +24,7 @@ public class Settings{
     protected String appName = "app";
     protected ObjectMap<String, Object> defaults = new ObjectMap<>();
     protected HashMap<String, Object> values = new HashMap<>();
+    protected HashMap<String, Object> overrideValues = new HashMap<>();
     protected boolean modified;
     protected Cons<Throwable> errorHandler;
     protected boolean hasErrored;
@@ -129,6 +130,14 @@ public class Settings{
         try{
             loadValues(getSettingsFile());
             writeLog("Loaded " + values.size() + " values");
+            if(OS.hasProp("settingsOverride")) {
+                loadOverrideValues();
+                if(overrideValues.size() > 0){
+                    System.out.println("Loaded " + overrideValues.size() + " override values");
+                }
+            } else {
+                    System.out.println("No settings override." + System.getProperty("settingsOverride"));
+            }
 
             //back up the save file, as the values have now been loaded successfully
             getSettingsFile().copyTo(getBackupSettingsFile());
@@ -202,6 +211,16 @@ public class Settings{
             if(end != -1){
                 throw new IOException("Trailing settings data; expected EOF, but got: " + end);
             }
+        }
+    }
+
+    public synchronized void loadOverrideValues() throws IOException{
+        String[] props = OS.prop("settingsOverride").split(",");
+        for(String prop : props) {
+            if(OS.hasProp(prop)) {
+                overrideValues.put(prop, OS.prop(prop));
+            }
+            System.out.println("Set setting " + prop + " to " + OS.prop(prop));
         }
     }
 
@@ -310,11 +329,11 @@ public class Settings{
     }
 
     public synchronized boolean has(String name){
-        return values.containsKey(name);
+        return values.containsKey(name) ? true : overrideValues.containsKey(name);
     }
 
-    public synchronized Object get(String name, Object def){
-        return values.containsKey(name) ? values.get(name) : def;
+    public synchronized Object get(String name, Object defaultValue){
+        return overrideValues.containsKey(name) ? overrideValues.get(name) : values.containsKey(name) ? values.get(name) : defaultValue;
     }
 
     public boolean isModified(){
