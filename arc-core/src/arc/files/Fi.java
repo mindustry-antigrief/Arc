@@ -560,7 +560,7 @@ public class Fi{
     }
 
     /** Recursively iterates through all files in this directory.
-     * Directories are not handled.*/
+     * Directories are not handled. */
     public void walk(Cons<Fi> cons){
         if(isDirectory()){
             for(Fi file : list()){

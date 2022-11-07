@@ -9,7 +9,7 @@ import arc.func.Cons;
 public class CommandHandler{
     private final ObjectMap<String, Command> commands = new ObjectMap<>();
     private final Seq<Command> orderedCommands = new Seq<>();
-    private String prefix;
+    public String prefix;
 
     /** Creates a command handler with a specific command prefix.*/
     public CommandHandler(String prefix){
