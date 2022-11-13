@@ -154,6 +154,14 @@ public class ObjectFloatMap<K> implements Iterable<ObjectFloatMap.Entry<K>>{
             put(entry.key, entry.value);
     }
 
+    public ObjectFloatMap<K> putAll(Object... values){
+        for(int i = 0; i < values.length / 2; i++){
+            put((K)values[i * 2], (float)values[i * 2 + 1]);
+        }
+
+        return this;
+    }
+
     /** Skips checks for existing keys. */
     private void putResize(K key, float value){
         // Check for empty buckets.
