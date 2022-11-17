@@ -1,11 +1,11 @@
 package arc;
 
 
-import arc.struct.*;
-import arc.struct.ObjectMap.*;
 import arc.input.*;
 import arc.input.InputDevice.*;
 import arc.math.*;
+import arc.struct.*;
+import arc.struct.ObjectMap.*;
 
 import static arc.Core.*;
 
@@ -141,12 +141,12 @@ public class KeyBinds{
 
     private Axis load(String name){
         if(settings.getBool(name + "-single", true)){
-            KeyCode key = KeyCode.byOrdinal(settings.getInt(name + "-key", KeyCode.unset.ordinal()));
-            return key == KeyCode.unset ? null : new Axis(key);
+            KeyCode key = KeyCode.byOrdinal(settings.getInt(name + "-key", KeyCode.anyKey.ordinal()));
+            return key == KeyCode.anyKey ? null : new Axis(key);
         }else{
-            KeyCode min = KeyCode.byOrdinal(settings.getInt(name + "-min", KeyCode.unset.ordinal()));
-            KeyCode max = KeyCode.byOrdinal(settings.getInt(name + "-max", KeyCode.unset.ordinal()));
-            return min == KeyCode.unset || max == KeyCode.unset ? null : new Axis(min, max);
+            KeyCode min = KeyCode.byOrdinal(settings.getInt(name + "-min", KeyCode.anyKey.ordinal()));
+            KeyCode max = KeyCode.byOrdinal(settings.getInt(name + "-max", KeyCode.anyKey.ordinal()));
+            return min == KeyCode.anyKey || max == KeyCode.anyKey ? null : new Axis(min, max);
         }
     }
 
