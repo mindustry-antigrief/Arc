@@ -133,10 +133,10 @@ public class Settings{
             if(OS.hasProp("settingsOverride")) {
                 loadOverrideValues();
                 if(overrideValues.size() > 0){
-                    System.out.println("Loaded " + overrideValues.size() + " override values");
+                    Log.debug("Loaded @ override values", overrideValues.size());
                 }
             } else {
-                    System.out.println("No settings override." + System.getProperty("settingsOverride"));
+                Log.debug("No settings override. ");
             }
 
             //back up the save file, as the values have now been loaded successfully
@@ -220,7 +220,7 @@ public class Settings{
             if(OS.hasProp(prop)) {
                 overrideValues.put(prop, OS.prop(prop));
             }
-            System.out.println("Set setting " + prop + " to " + OS.prop(prop));
+            Log.debug("Set setting @ to @", prop, OS.prop(prop));
         }
     }
 
