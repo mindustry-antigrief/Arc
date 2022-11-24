@@ -1,5 +1,6 @@
 package arc.net.dns;
 
+import arc.*;
 import arc.math.*;
 import arc.struct.*;
 import arc.util.*;
@@ -83,7 +84,7 @@ public final class ArcDns{
         Seq<SRVRecord> records = new Seq<>();
 
         try(DatagramSocket socket = new DatagramSocket()){
-            socket.setSoTimeout(2000);
+            socket.setSoTimeout(Core.settings.getInt("serverbrowserpinglimit", 2000));
 
             short id = (short)new Rand().nextInt(Short.MAX_VALUE);
             byte[] response = new byte[512];
