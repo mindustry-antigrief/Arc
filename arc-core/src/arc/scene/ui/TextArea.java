@@ -215,14 +215,18 @@ public class TextArea extends TextField{
 
     @Override
     protected void drawText(Font font, float x, float y){
-        boolean had = font.getData().retainMarkup;
-        font.getData().retainMarkup = true;
+        Font.FontData data = font.getData();
+        boolean had = data.markupEnabled;
+        boolean had2 = data.retainMarkup;
+        data.markupEnabled = !layout.ignoreMarkup;
+        data.retainMarkup = true;
         float offsetY = 0;
         for(int i = firstLineShowing * 2; i < (firstLineShowing + linesShowing) * 2 && i < linesBreak.size; i += 2){
             font.draw(displayText, x, y + offsetY, linesBreak.items[i], linesBreak.items[i + 1], 0, Align.left, false);
             offsetY -= font.getLineHeight();
         }
-        font.getData().retainMarkup = had;
+        data.markupEnabled = had;
+        data.retainMarkup = had2;
     }
 
     @Override

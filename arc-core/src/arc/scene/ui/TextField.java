@@ -6,7 +6,6 @@ import arc.func.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.graphics.g2d.Font.*;
-import arc.graphics.g2d.GlyphLayout.*;
 import arc.input.*;
 import arc.math.*;
 import arc.math.geom.*;
@@ -52,7 +51,7 @@ public class TextField extends Element implements Disableable{
     /** Special field containing implementation-specific data for IME support. */
     public Object imeData;
 
-    protected final GlyphLayout layout = new GlyphLayout(false);
+    protected final GlyphLayout layout;
     protected final FloatSeq glyphPositions = new FloatSeq();
     protected String text;
     protected int cursor, selectionStart;
@@ -94,10 +93,19 @@ public class TextField extends Element implements Disableable{
     }
 
     public TextField(String text, TextFieldStyle style){
+        layout = new GlyphLayout(isOverridden());
         setStyle(style);
         initialize();
         setText(text);
         setSize(getPrefWidth(), getPrefHeight());
+    }
+
+    /** Detect if this is within a mod or some other overriding thing. I know this is cursed.
+     * If this is true, we ignore markup (and let the subclass handle the calculation/drawing etc.)
+     * This can be changed by using {@link #markup(boolean)}
+     */
+    private boolean isOverridden(){
+        return this.getClass().getPackage() != TextField.class.getPackage();
     }
 
     protected void initialize(){
@@ -395,10 +403,14 @@ public class TextField extends Element implements Disableable{
     }
 
     protected void drawText(Font font, float x, float y){
-        boolean had = font.getData().retainMarkup;
-        font.getData().retainMarkup = true;
+        FontData data = font.getData();
+        boolean had = data.markupEnabled;
+        boolean had2 = data.retainMarkup;
+        data.markupEnabled = !layout.ignoreMarkup;
+        data.retainMarkup = true;
         font.draw(displayText, x + textOffset, y, visibleTextStart, visibleTextEnd, 0, Align.left, false);
-        font.getData().retainMarkup = had;
+        data.markupEnabled = had;
+        data.retainMarkup = had2;
     }
 
     protected void drawCursor(Drawable cursorPatch, Font font, float x, float y){
