@@ -1,14 +1,11 @@
 package arc;
 
-import arc.assets.AssetManager;
-import arc.audio.Audio;
-import arc.graphics.Camera;
-import arc.graphics.GL20;
-import arc.graphics.GL30;
-import arc.graphics.g2d.Batch;
-import arc.graphics.g2d.TextureAtlas;
-import arc.scene.Scene;
-import arc.util.I18NBundle;
+import arc.assets.*;
+import arc.audio.*;
+import arc.graphics.*;
+import arc.graphics.g2d.*;
+import arc.scene.*;
+import arc.util.*;
 
 /**
  * Global references to all of Arc's core modules.

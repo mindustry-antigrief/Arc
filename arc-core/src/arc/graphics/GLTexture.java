@@ -1,8 +1,11 @@
 package arc.graphics;
 
+import arc.*;
 import arc.graphics.Texture.*;
 import arc.graphics.gl.*;
 import arc.util.*;
+
+import java.lang.ref.*;
 
 /**
  * Class representing an OpenGL texture by its target and handle. Keeps track of its state like the TextureFilter and TextureWrap.
@@ -15,11 +18,14 @@ public abstract class GLTexture implements Disposable{
     /** Do not change. This is read-only and only set after texture data is loaded. */
     public int width, height;
 
-    protected int glHandle;
     protected TextureFilter minFilter = TextureFilter.nearest;
     protected TextureFilter magFilter = TextureFilter.nearest;
     protected TextureWrap uWrap = TextureWrap.clampToEdge;
     protected TextureWrap vWrap = TextureWrap.clampToEdge;
+
+    protected final static boolean debug = true;
+    protected String trace;
+    protected State state = new State(this, State.head);
 
     /** Generates a new OpenGL texture with the specified target. */
     public GLTexture(int glTarget){
@@ -27,8 +33,14 @@ public abstract class GLTexture implements Disposable{
     }
 
     public GLTexture(int glTarget, int glHandle){
+        if(debug){
+            StackTraceElement[] st = Thread.currentThread().getStackTrace();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+            trace = sb.toString();
+        }
         this.glTarget = glTarget;
-        this.glHandle = glHandle;
+        state.glHandle = glHandle;
     }
 
     protected static void uploadImageData(int target, TextureData data){
@@ -69,7 +81,7 @@ public abstract class GLTexture implements Disposable{
      * {@link GL20#glActiveTexture(int)}.
      */
     public void bind(){
-        Gl.bindTexture(glTarget, glHandle);
+        Gl.bindTexture(glTarget, state.glHandle);
     }
 
     /**
@@ -78,7 +90,7 @@ public abstract class GLTexture implements Disposable{
      */
     public void bind(int unit){
         Gl.activeTexture(Gl.texture0 + unit);
-        Gl.bindTexture(glTarget, glHandle);
+        Gl.bindTexture(glTarget, state.glHandle);
     }
 
     /** @return The {@link Texture.TextureFilter} used for minification. */
@@ -103,7 +115,7 @@ public abstract class GLTexture implements Disposable{
 
     /** @return The OpenGL handle for this texture. */
     public int getTextureObjectHandle(){
-        return glHandle;
+        return state.glHandle;
     }
 
     /**
@@ -194,9 +206,38 @@ public abstract class GLTexture implements Disposable{
 
     @Override
     public void dispose(){
-        if(glHandle != 0){
-            Gl.deleteTexture(glHandle);
-            glHandle = 0;
+        state.release();
+    }
+
+    protected static class State extends Threads.DisposableRef<GLTexture> implements ApplicationListener{
+        protected int glHandle;
+
+        private static final ReferenceQueue<GLTexture> q = new ReferenceQueue<>();
+        private static final Threads.DisposableRef<GLTexture> head = new State(q);
+
+        private State(ReferenceQueue<GLTexture> q){
+            super(q);
+            Core.app.addListener(this); // This is only ever called once so it's fine
+        }
+
+        private State(GLTexture referent, Threads.DisposableRef<GLTexture> list){
+            super(referent, list);
+        }
+
+        public void release(){
+            if(glHandle != 0 && remove()){
+                Gl.deleteTexture(glHandle);
+                glHandle = 0;
+            }
+        }
+
+        @Override
+        public void update(){
+            State texState;
+            while((texState = ((State)q.poll())) != null){
+                Log.err("Texture was not disposed: @", texState.glHandle);
+                texState.release();
+            }
         }
     }
 }

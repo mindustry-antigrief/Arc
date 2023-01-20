@@ -30,8 +30,8 @@ public class TextureAtlas implements Disposable{
 
     /** Returns a new texture atlas with only a blank texture region.*/
     public static TextureAtlas blankAtlas(){
-        TextureAtlas a =  new TextureAtlas();
-        a.white = new AtlasRegion(Pixmaps.blankTextureRegion());
+        TextureAtlas a = new TextureAtlas();
+        a.addRegion("white", Pixmaps.blankTextureRegion());
         return a;
     }
 
@@ -100,6 +100,7 @@ public class TextureAtlas implements Disposable{
             int height = region.height;
             AtlasRegion atlasRegion = new AtlasRegion(pageToTexture.get(region.page), region.left, region.top,
             region.rotate ? height : width, region.rotate ? width : height);
+            atlasRegion.pid = region.page.id;
             atlasRegion.name = region.name;
             atlasRegion.offsetX = region.offsetX;
             atlasRegion.offsetY = region.offsetY;
@@ -313,9 +314,10 @@ public class TextureAtlas implements Disposable{
                 read.b();
 
                 while(read.checkEOF() != -1){
-                    String image = read.str();
-                    Fi file = imagesDir.child(image);
+                    String image = read.str(); // The name of the page file
+                    Fi file = imagesDir.child(image); // The image that stores the page
 
+                    byte id = read.b();
                     short pageWidth = read.s(), pageHeight = read.s();
 
                     TextureFilter min = TextureFilter.all[read.b()], mag = TextureFilter.all[read.b()];
@@ -323,7 +325,7 @@ public class TextureAtlas implements Disposable{
 
                     int rects = read.i();
 
-                    AtlasPage page = new AtlasPage(file, pageWidth, pageHeight, min.isMipMap(), min, mag, wrapX, wrapY);
+                    AtlasPage page = new AtlasPage(file, pageWidth, pageHeight, min.isMipMap(), min, mag, wrapX, wrapY, id);
                     pages.add(page);
 
                     for(int j = 0; j < rects; j++){
@@ -378,10 +380,12 @@ public class TextureAtlas implements Disposable{
             public final TextureFilter magFilter;
             public final TextureWrap uWrap;
             public final TextureWrap vWrap;
+            public final int id; // This is more of a page type id, useful for when a page is split due to size
+            private static int lastID = -1; // Used only for pages that don't specify their own id (only for vanilla support)
             public Texture texture;
 
             public AtlasPage(Fi handle, int width, int height, boolean useMipMaps, TextureFilter minFilter,
-                             TextureFilter magFilter, TextureWrap uWrap, TextureWrap vWrap){
+                             TextureFilter magFilter, TextureWrap uWrap, TextureWrap vWrap, int id){
                 this.width = width;
                 this.height = height;
                 this.textureFile = handle;
@@ -390,6 +394,13 @@ public class TextureAtlas implements Disposable{
                 this.magFilter = magFilter;
                 this.uWrap = uWrap;
                 this.vWrap = vWrap;
+                this.id = id;
+            }
+
+            /* Constructor without id for mod support */
+            public AtlasPage(Fi handle, int width, int height, boolean useMipMaps, TextureFilter minFilter,
+                             TextureFilter magFilter, TextureWrap uWrap, TextureWrap vWrap){
+                this(handle, width, height, useMipMaps, minFilter, magFilter, uWrap, vWrap, lastID--);
             }
         }
 
@@ -420,6 +431,9 @@ public class TextureAtlas implements Disposable{
          * packer.
          */
         public String name;
+
+        /** The id of the sprite's page, foo's addition used for page types split across multiple files due to size limits */
+        public int pid;
 
         /** The offset from the left of the original image to the left of the packed image, after whitespace was removed for packing. */
         public float offsetX;

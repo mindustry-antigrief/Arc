@@ -1000,6 +1000,14 @@ public class Seq<T> implements Iterable<T>, Eachable<T>{
         return result;
     }
 
+    public <V> V[] toArray(Class<V> type, Func<T, V> mapper){
+        V[] result = (V[])java.lang.reflect.Array.newInstance(type, size);
+        for(int i = 0; i < size; i++){
+            result[i] = mapper.get(items[i]);
+        }
+        return result;
+    }
+
     @Override
     public int hashCode(){
         if(!ordered) return super.hashCode();

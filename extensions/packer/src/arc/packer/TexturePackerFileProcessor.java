@@ -18,6 +18,7 @@ public class TexturePackerFileProcessor extends FileProcessor{
     Seq<File> ignoreDirs = new Seq<>();
     boolean countOnly;
     int packCount;
+    private byte nextPageID;
 
     public TexturePackerFileProcessor(){
         this(new Settings(), "pack.aatls");
@@ -215,9 +216,9 @@ public class TexturePackerFileProcessor extends FileProcessor{
         // Pack.
         if(!settings.silent){
             try{
-                System.out.println(inputDir.inputFile.getCanonicalPath());
+                Log.info(inputDir.inputFile.getCanonicalPath());
             }catch(IOException ignored){
-                System.out.println(inputDir.inputFile.getAbsolutePath());
+                Log.info(inputDir.inputFile.getAbsolutePath());
             }
         }
 
@@ -226,6 +227,7 @@ public class TexturePackerFileProcessor extends FileProcessor{
             packer.addImage(file.inputFile);
         }
 
+        packer.pageTypeID = nextPageID++;
         //this part can be multithreaded
         packer.pack(inputDir.outputDir, packFileName);
     }

@@ -137,6 +137,7 @@ public class MaxRectsPacker implements Packer{
                 if(!settings.silent){
                     if(++i % 70 == 0) System.out.println();
                     System.out.print(".");
+                    System.out.flush();
                 }
                 bestResult = getBest(bestResult, result);
                 size = sizeSearch.next(result == null);

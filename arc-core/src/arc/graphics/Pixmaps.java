@@ -2,6 +2,7 @@ package arc.graphics;
 
 import arc.graphics.Texture.*;
 import arc.graphics.g2d.*;
+import arc.graphics.gl.*;
 import arc.math.*;
 import arc.math.geom.*;
 import arc.struct.*;
@@ -216,7 +217,7 @@ public class Pixmaps{
     }
 
     public static Texture blankTexture(){
-        Texture texture = new Texture(blankPixmap());
+        Texture texture = new Texture(new PixmapTextureData(blankPixmap(), false, true));
         texture.setWrap(TextureWrap.repeat, TextureWrap.repeat);
         return texture;
     }

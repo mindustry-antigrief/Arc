@@ -20,6 +20,7 @@ public class TexturePacker{
     private final Packer packer;
     private final ImageProcessor imageProcessor;
     private final Seq<InputImage> inputImages = new Seq<>();
+    public byte pageTypeID;
 
     /** @param rootDir See {@link #setRootDir(File)}. */
     public TexturePacker(File rootDir, Settings settings){
@@ -253,12 +254,14 @@ public class TexturePacker{
                 write.b(TextureAtlasData.formatHeader);
                 write.b(TextureAtlasData.formatVersion);
             }
-
+            byte pid = pageTypeID++;
             //write every page; reader is expected to read until EOF
             for(Page page : pages){
                 //write a single byte to check for EOF
                 write.b(1);
                 write.str(page.imageName);
+                //write page type id
+                write.b(pid);
                 //size
                 write.s(page.imageWidth);
                 write.s(page.imageHeight);

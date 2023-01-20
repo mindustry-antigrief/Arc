@@ -108,7 +108,7 @@ public class Texture extends GLTexture{
 
     @Override
     public boolean isDisposed(){
-        return glHandle == 0;
+        return state.glHandle == 0;
     }
 
     public String toString(){

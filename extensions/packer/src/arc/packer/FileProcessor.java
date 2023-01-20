@@ -155,6 +155,7 @@ public class FileProcessor{
 
     private void process(File[] files, File outputRoot, File outputDir, LinkedHashMap<File, Seq<Entry>> dirToEntries,
                          int depth){
+        Sort.instance().sort(files, comparator); // Ensures that files are passed to processDir in a consistent order
         // Store empty entries for every directory.
         for(File file : files){
             File dir = file.getParentFile();

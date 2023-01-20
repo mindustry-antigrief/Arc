@@ -9,6 +9,7 @@ import arc.math.*;
 import arc.util.*;
 
 import java.io.*;
+import java.lang.ref.*;
 import java.nio.*;
 
 /**
@@ -36,15 +37,15 @@ public class Pixmap implements Disposable{
     /** Internal data, arranged as RGBA with 1 byte per component. This buffer must be direct or natively-allocated. */
     public ByteBuffer pixels;
 
-    /**
-     * When natives are present, this handle is the address of the memory region.
-     * When this pixmap is disposed/uninitialized, this value is 0.
-     * When natives are not present, this value is -1.
-     */
-    long handle;
+    private final static boolean debugCount = true, debug = false;
+    public static int good, bad;
+    private String trace;
+
+    protected State state = new State(this, State.head);
 
     /** Creates a new Pixmap instance with the given width and height. */
     public Pixmap(int width, int height){
+        getTrace();
         load(width, height);
     }
 
@@ -58,6 +59,7 @@ public class Pixmap implements Disposable{
      * @param encodedData the image data to load, typically read from a PNG file
      */
     public Pixmap(byte[] encodedData, int offset, int len){
+        getTrace();
         load(encodedData, offset, len, null);
     }
 
@@ -70,18 +72,20 @@ public class Pixmap implements Disposable{
      * @param file the {@link Fi}
      */
     public Pixmap(Fi file){
+        getTrace();
         byte[] bytes = file.readBytes();
         load(bytes, 0, bytes.length, file.toString());
     }
 
     /** Creates a pixmap from a direct ByteBuffer. */
     public Pixmap(ByteBuffer buffer, int width, int height){
+        getTrace();
         if(!buffer.isDirect()) throw new ArcRuntimeException("Pixmaps may only use direct/native ByteBuffers!");
 
         this.width = width;
         this.height = height;
         this.pixels = buffer;
-        this.handle = -1;
+        state.handle = -1;
 
         buffer.position(0).limit(buffer.capacity());
     }
@@ -94,6 +98,14 @@ public class Pixmap implements Disposable{
         out.pixels.put(pixels);
         out.pixels.position(0);
         return out;
+    }
+
+    private void getTrace() {
+        if(!debug) return;
+        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 3; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+        trace = sb.toString();
     }
 
     /** Iterates through every position in this Pixmap. */
@@ -592,14 +604,12 @@ public class Pixmap implements Disposable{
     /** Releases all resources associated with this Pixmap. */
     @Override
     public void dispose(){
-        if(handle <= 0) return;
-        free(handle);
-        handle = 0;
+        state.release();
     }
 
     @Override
     public boolean isDisposed(){
-        return handle == 0;
+        return state.handle == 0;
     }
 
     public void set(int x, int y, Color color){
@@ -653,7 +663,7 @@ public class Pixmap implements Disposable{
 
     /** @return the direct {@link ByteBuffer} holding the pixel data. */
     public ByteBuffer getPixels(){
-        if(handle == 0) throw new ArcRuntimeException("Pixmap already disposed");
+        if(state.handle == 0) throw new ArcRuntimeException("Pixmap already disposed");
         return pixels;
     }
 
@@ -733,7 +743,7 @@ public class Pixmap implements Disposable{
                 pixels = loadJni(nativeData, encodedData, offset, len);
                 if(pixels == null) throw new ArcRuntimeException("Error loading pixmap from image data: " + getFailureReason() + (file == null ? "" : " (" + file + ")"));
 
-                handle = nativeData[0];
+                state.handle = nativeData[0];
                 width = (int)nativeData[1];
                 height = (int)nativeData[2];
                 pixels.position(0).limit(pixels.capacity());
@@ -761,7 +771,7 @@ public class Pixmap implements Disposable{
             pixels = reader.read(new ByteArrayInputStream(encodedData, offset, len));
             width = reader.width;
             height = reader.height;
-            handle = -1;
+            state.handle = -1;
             pixels.position(0).limit(pixels.capacity());
         }catch(Exception e){
             throw new ArcRuntimeException("Failed to load PNG data" + (file == null ? "" : " (" + file + ")"), e);
@@ -776,12 +786,12 @@ public class Pixmap implements Disposable{
             if(pixels == null) throw new ArcRuntimeException("Error creating pixmap (out of memory?)");
             pixels.limit(pixels.capacity());
 
-            this.handle = nativeData[0];
+            state.handle = nativeData[0];
             this.width = (int)nativeData[1];
             this.height = (int)nativeData[2];
         }else{
             //use DirectByteBuffer instead
-            this.handle = -1; //handle -1 means non-native buffer
+            state.handle = -1; //handle -1 means non-native buffer
             this.width = width;
             this.height = height;
             this.pixels = ByteBuffer.allocateDirect(width * height * 4);
@@ -807,6 +817,42 @@ public class Pixmap implements Disposable{
         Format(int glType, int glFormat){
             this.glFormat = glFormat;
             this.glType = glType;
+        }
+    }
+
+    private static class State extends Threads.DisposableRef<Pixmap> implements ApplicationListener{
+        /**
+         * When natives are present, this handle is the address of the memory region.
+         * When this pixmap is disposed/uninitialized, this value is 0.
+         * When natives are not present, this value is -1.
+         */
+        private long handle;
+
+        private static final ReferenceQueue<Pixmap> q = new ReferenceQueue<>();
+        private static final Threads.DisposableRef<Pixmap> head = new State(q);
+
+        private State(ReferenceQueue<Pixmap> q){
+            super(q);
+            Core.app.addListener(this); // This is only ever called once so it's fine
+        }
+
+        private State(Pixmap referent, Threads.DisposableRef<Pixmap> list){
+            super(referent, list);
+        }
+
+        public void release(){
+            if(handle <= 0 || !remove()) return;
+            free(handle);
+            handle = 0;
+        }
+
+        @Override
+        public void update(){
+            State pixState;
+            while((pixState = ((State)q.poll())) != null){
+                Log.err("Pixmap was not disposed: @", pixState.handle);
+                pixState.release();
+            }
         }
     }
 
