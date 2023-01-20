@@ -833,7 +833,7 @@ public class Pixmap implements Disposable{
 
         private State(ReferenceQueue<Pixmap> q){
             super(q);
-            Core.app.addListener(this); // This is only ever called once so it's fine
+            if(Core.app != null) Core.app.addListener(this); // This is only ever called once so it's fine
         }
 
         private State(Pixmap referent, Threads.DisposableRef<Pixmap> list){
