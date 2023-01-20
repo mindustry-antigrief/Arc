@@ -2,7 +2,6 @@ package arc;
 
 import arc.func.*;
 import arc.struct.*;
-import arc.util.*;
 
 import java.util.*;
 
@@ -10,10 +9,9 @@ import java.util.*;
 @SuppressWarnings("unchecked")
 public class Events{
     private static int lastId = -1;
-    private static int index; // Used for iteration, based on EntityGroup
     private static class Handler<T>{ // FINISHME: Pool these maybe? I doubt it's needed though
-        final int id = ++lastId;
-        final Cons<T> cons;
+        private int id = ++lastId;
+        private final Cons<T> cons;
 
         Handler(Cons<T> cons){
             this.cons = cons;
@@ -52,13 +50,12 @@ public class Events{
 
     /** Only use this method if you have the reference to the exact listener object that was used. */
     public static <T> boolean remove(Class<T> type, int id){
-        Seq<Handler<?>> listeners = events.get(type, () -> new Seq<>(Handler.class));
-        if(listeners.isEmpty() || listeners.first().id > id || listeners.get(listeners.size - 1).id < id) return false; // id is less than smallest or larger than max id of this type
-        int idx = Arrays.binarySearch(listeners.items, 0, listeners.size, null, Structs.comparingInt(h -> h != null ? h.id : id));
-        if(idx < 0) return false; // The event ID wasn't found
-        listeners.remove(idx);
-        if(index >= idx) index--; // Decrement the index counter so that iteration works correctly
+        Seq<Handler<?>> listeners = events.get(type);
+        if(listeners == null || listeners.isEmpty() || id < 0 || id > lastId) return false;
+        Handler<?> found = listeners.find(h -> h.id == id);
+        if(found == null) return false;
 
+        found.id = -1; // Mark for deletion FINISHME: Purge the marked events every so often as they will currently sit around in memory forever if the event is never fired after removal
         return true;
     }
 
@@ -68,8 +65,8 @@ public class Events{
 
         if(listeners != null){
             Handler[] items = listeners.items;
-            for(index = 0; index < listeners.size; index++){
-                items[index].cons.get(type);
+            for(int i = 0; i < listeners.size; i++){
+                items[i].cons.get(type);
             }
         }
     }
@@ -83,9 +80,14 @@ public class Events{
         Seq<Handler<?>> listeners = events.get(ctype);
 
         if(listeners != null){
-            Handler[] items = listeners.items;
-            for(index = 0; index < listeners.size; index++){
-                items[index].cons.get(type);
+            Iterator<Handler<T>> it = listeners.<Handler<T>>as().iterator();
+            while(it.hasNext()){
+                Handler<T> listener = it.next();
+                if(listener.id == -1){
+                    it.remove();
+                    continue;
+                }
+                listener.cons.get(type);
             }
         }
     }
