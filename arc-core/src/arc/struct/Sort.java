@@ -26,26 +26,14 @@ import java.util.Comparator;
  * @author Nathan Sweet
  */
 public class Sort{
-    private static Sort instance;
-    private static Thread instanceThread;
-    private static final boolean debug = OS.hasProp("sortdebug"), debugThrow = "throw".equals(OS.prop("sortdebug"));
+    private static ThreadLocal<Sort> instance = Threads.local(Sort::new);
 
     private TimSort timSort;
     private ComparableTimSort comparableTimSort;
 
     /** Returns a Sort instance for convenience. Multiple threads must not use this instance at the same time. */
     public static Sort instance(){
-        if(instance == null){
-            instance = new Sort();
-            instanceThread = Thread.currentThread();
-        }else if(debug && Thread.currentThread() != instanceThread && !Thread.currentThread().getName().equals("Assets")){
-            if (!Thread.currentThread().getName().startsWith("WorkerExecutor Queue")) {// FINISHME: Stop being lazy and fix annotation processing
-                if(debugThrow) throw new ArcRuntimeException("Sort.instance() was used on non instance thread " + Thread.currentThread().getName());
-                else Log.err("Sort.instance() was used on non instance thread @", Thread.currentThread().getName());
-            }
-        }
-
-        return instance;
+        return instance.get();
     }
 
     public <T> void sort(Seq<T> a){
