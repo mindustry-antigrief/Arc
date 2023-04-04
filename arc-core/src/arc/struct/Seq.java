@@ -14,7 +14,7 @@ import java.util.*;
 @SuppressWarnings("unchecked")
 public class Seq<T> implements Iterable<T>, Eachable<T>{
     /** Debugging variable to count total number of iterators allocated. */
-    public static int iteratorsAllocated = 0;
+    public static int iteratorsAllocated, extraIteratorsAllocated;
     /**
      * Provides direct access to the underlying array. If the Array's generic type is not Object, this field may only be accessed
      * if the {@link Seq#Seq(boolean, int, Class)} constructor was used.
@@ -1111,6 +1111,7 @@ public class Seq<T> implements Iterable<T>, Eachable<T>{
                 return iterator2;
             }
             //allocate new iterator in the case of 3+ nested loops.
+            extraIteratorsAllocated++;
             return new SeqIterator();
         }
 

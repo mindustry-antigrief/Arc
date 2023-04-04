@@ -16,6 +16,8 @@ public class SpriteBatch extends Batch{
     int totalRenderCalls = 0;
     /** The maximum number of sprites rendered in one batch so far. **/
     int maxSpritesInBatch = 0;
+//    public long flushC, lastF, flushT;
+//    int lastPos;
 
     /**
      * Constructs a new SpriteBatch with a size of 8191, one buffer, and the default shader.
@@ -87,6 +89,17 @@ public class SpriteBatch extends Batch{
     @Override
     protected void flush(){
         if(idx == 0) return;
+//        long flushS = Time.nanos();
+//        if(Core.graphics.getFrameId() != lastF){
+//            float ms = Time.nanosToMillisf(flushT);
+//            flushT = 0;
+//            long fr = Core.graphics.getFrameId();
+//            Log.debug("Frame @: @ | Flushed for: @ms", fr, flushC, ms);
+//            flushC = 1;
+//            lastF = fr;
+//        }else{
+//            flushC++;
+//        }
 
         getShader().bind();
         setupMatrices();
@@ -104,6 +117,13 @@ public class SpriteBatch extends Batch{
         blending.apply();
 
         lastTexture.bind();
+        // FINISHME: Working proof of concept which demos that using more than one texture bind works
+//        int pos = Core.atlas.getTextures().orderedItems().indexOf(lastTexture, true) + 1; // 0 if not found, otherwise 1+ based on page number
+//        lastTexture.bind(pos);
+//        if(lastPos != pos){
+//            getShader().setUniformi("u_texture", pos);
+//            lastPos = pos;
+//        }
         Mesh mesh = this.mesh;
         mesh.setVertices(vertices, 0, idx);
         mesh.getIndicesBuffer().position(0);
@@ -111,6 +131,8 @@ public class SpriteBatch extends Batch{
         mesh.render(getShader(), Gl.triangles, 0, count);
 
         idx = 0;
+
+//        flushT += Time.nanos() - flushS;
     }
 
     @Override

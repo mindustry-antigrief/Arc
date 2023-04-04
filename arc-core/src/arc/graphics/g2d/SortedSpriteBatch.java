@@ -142,12 +142,16 @@ public class SortedSpriteBatch extends SpriteBatch{
     protected void flushRequests(){
         if(!flushing && numRequests > 0){
             flushing = true;
+//            long start = Time.nanos();
             sortRequests();
+//            long postSort = Time.nanos();
             float preColor = colorPacked, preMixColor = mixColorPacked;
             Blending preBlending = blending;
 
-            for(int j = 0; j < numRequests; j++){
-                final DrawRequest req = requests[j];
+            final int nr = numRequests;
+            DrawRequest[] r = requests;
+            for(int j = 0; j < nr; j++){
+                DrawRequest req = r[j];
 
                 colorPacked = req.color;
                 mixColorPacked = req.mixColor;
@@ -162,6 +166,8 @@ public class SortedSpriteBatch extends SpriteBatch{
                     super.draw(req.region, req.x, req.y, req.originX, req.originY, req.width, req.height, req.rotation);
                 }
             }
+//            long end = Time.nanos();
+//            Log.info("FlushSorted total: @ms | Sort: @ms | PostSort: @ms", Time.nanosToMillisf(end - start), Time.nanosToMillisf(postSort - start), Time.nanosToMillisf(end - postSort));
 
             colorPacked = preColor;
             mixColorPacked = preMixColor;
