@@ -20,7 +20,7 @@ import java.io.*;
  * @author Nathan Sweet
  */
 public class TextureAtlas implements Disposable{
-    private final ObjectSet<Texture> textures = new ObjectSet<>(4);
+    private final OrderedSet<Texture> textures = new OrderedSet<>(4);
     private final Seq<AtlasRegion> regions = new Seq<>();
     private final ObjectMap<String, Drawable> drawables = new ObjectMap<>();
     private final ObjectMap<String, AtlasRegion> regionmap = new ObjectMap<>();
@@ -273,7 +273,7 @@ public class TextureAtlas implements Disposable{
     }
 
     /** @return the textures of the pages, unordered */
-    public ObjectSet<Texture> getTextures(){
+    public OrderedSet<Texture> getTextures(){
         return textures;
     }
 
@@ -456,7 +456,7 @@ public class TextureAtlas implements Disposable{
         /** The height of the image, before whitespace was removed for packing. */
         public int originalHeight;
 
-        /** If true, the region has been rotated 90 degrees counter clockwise. */
+        /** If true, the region has been rotated 90 degrees counterclockwise. */
         public boolean rotate;
 
         /** The ninepatch splits, or null if not a ninepatch. Has 4 elements: left, right, top, bottom. */

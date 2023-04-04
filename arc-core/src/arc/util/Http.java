@@ -301,8 +301,8 @@ public class Http{
 
                         //4xx or 5xx error
                         if(code >= 400){
-                            HttpStatus status = HttpStatus.byCode(code);
-                            errorHandler.get(new HttpStatusException("HTTP request failed with error: " + code + " (" + status + ", URL = " + url + ")", status, new HttpResponse(connection)));
+                            HttpResponse res = new HttpResponse(connection);
+                            errorHandler.get(new HttpStatusException("HTTP request failed with error: " + code + " (" + res.getStatus() + ", URL = " + url + ")", res.getStatus(), res));
                         }else{
                             success.get(new HttpResponse(connection));
                         }
@@ -403,7 +403,13 @@ public class Http{
         HTTP_VERSION_NOT_SUPPORTED(505),
         INSUFFICIENT_STORAGE(507);
 
-        private static IntMap<HttpStatus> byCode;
+        private static final IntMap<HttpStatus> byCode = new IntMap<>();
+
+        static {
+            for (HttpStatus status : values()) {
+                byCode.put(status.code, status);
+            }
+        }
 
         public final int code;
 
@@ -412,13 +418,7 @@ public class Http{
         }
 
         /** Find an HTTP status enum by code. */
-        public static synchronized HttpStatus byCode(int code){
-            if(byCode == null){
-                byCode = new IntMap<>();
-                for(HttpStatus status : HttpStatus.values()){
-                    byCode.put(status.code, status);
-                }
-            }
+        public static HttpStatus byCode(int code){
             return byCode.get(code, UNKNOWN_STATUS);
         }
     }

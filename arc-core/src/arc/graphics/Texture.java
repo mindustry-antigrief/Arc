@@ -3,6 +3,7 @@ package arc.graphics;
 import arc.*;
 import arc.files.*;
 import arc.graphics.gl.*;
+import arc.util.*;
 
 /**
  * A Texture wraps a standard OpenGL ES texture.
@@ -57,7 +58,9 @@ public class Texture extends GLTexture{
 
     protected Texture(int glTarget, int glHandle, TextureData data){
         super(glTarget, glHandle);
+        long loadS = Time.nanos();
         load(data);
+        Log.debug("Loaded data in @", Time.millisSinceNanos(loadS));
     }
 
     public static Texture createEmpty(TextureData data){
@@ -78,7 +81,6 @@ public class Texture extends GLTexture{
 
         unsafeSetFilter(minFilter, magFilter, true);
         unsafeSetWrap(uWrap, vWrap, true);
-        Gl.bindTexture(glTarget, 0);
     }
 
     public void draw(Pixmap pixmap){

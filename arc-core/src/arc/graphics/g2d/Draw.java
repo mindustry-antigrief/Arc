@@ -151,7 +151,7 @@ public class Draw{
     }
 
     public static float z(){
-        return batch.sortAscending ? batch.z : -batch.z;
+        return batch.z * batch.sortAscending; // batch.sortAscending ? batch.z : -batch.z
     }
 
     /** Note that this does nothing on most Batch implementations. */

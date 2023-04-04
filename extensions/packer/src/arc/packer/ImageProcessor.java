@@ -87,6 +87,7 @@ public class ImageProcessor{
     }
 
     public void clear(){
+        rects.each(r -> r.pixmap.dispose());
         rects.clear();
         crcs.clear();
     }

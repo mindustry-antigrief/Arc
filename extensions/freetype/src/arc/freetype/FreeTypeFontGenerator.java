@@ -542,7 +542,7 @@ public class FreeTypeFontGenerator implements Disposable{
         Pixmap mainPixmap = mainBitmap.getPixmap(parameter.color, parameter.gamma);
 
         if(mainBitmap.getWidth() != 0 && mainBitmap.getRows() != 0){
-            int offsetX = 0, offsetY = 0;
+            int offsetX, offsetY;
             if(parameter.borderWidth > 0){
                 // execute stroker; this generates a glyph "extended" along the outline
                 int top = mainGlyph.getTop(), left = mainGlyph.getLeft();
@@ -645,8 +645,10 @@ public class FreeTypeFontGenerator implements Disposable{
         glyph.srcY = (int)rect.y;
 
         // If a page was added, create a new texture region for the incrementally added glyph.
-        if(parameter.incremental && data.regions != null && data.regions.size <= glyph.page)
+        if(parameter.incremental && data.regions != null && data.regions.size <= glyph.page) {
             packer.updateTextureRegions(data.regions, parameter.minFilter, parameter.magFilter, parameter.genMipMaps);
+            Log.debug("Added a page to the @ font.", this.name);
+        }
 
         mainPixmap.dispose();
         mainGlyph.dispose();

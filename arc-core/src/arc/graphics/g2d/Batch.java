@@ -10,7 +10,7 @@ public abstract class Batch implements Disposable{
     protected Mesh mesh;
 
     protected float z;
-    protected boolean sortAscending = true;
+    protected int sortAscending = 1;
     protected int idx = 0;
     protected Texture lastTexture = null;
 
@@ -32,7 +32,7 @@ public abstract class Batch implements Disposable{
     protected float mixColorPacked = Color.clearFloatBits;
 
     protected void z(float z){
-        this.z = sortAscending ? z : -z;
+        this.z = z * sortAscending; // sortAscending ? z : -z
     }
 
     /** Enables or disables Z-sorting. Flushes the batch. Only does something on supported batches. */
@@ -42,7 +42,7 @@ public abstract class Batch implements Disposable{
 
     /** Sets the sorting order. The batch must be flushed for this to take effect properly. */
     protected void setSortAscending(boolean ascend){
-        sortAscending = ascend;
+        sortAscending = Mathf.sign(ascend);
     }
 
     protected void setColor(Color tint){

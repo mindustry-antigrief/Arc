@@ -155,7 +155,7 @@ public class FileProcessor{
 
     private void process(File[] files, File outputRoot, File outputDir, LinkedHashMap<File, Seq<Entry>> dirToEntries,
                          int depth){
-        Sort.instance().sort(files, comparator); // Ensures that files are passed to processDir in a consistent order
+        if(comparator != null) Sort.instance().sort(files, comparator);
         // Store empty entries for every directory.
         for(File file : files){
             File dir = file.getParentFile();
@@ -169,13 +169,7 @@ public class FileProcessor{
         for(File file : files){
             if(file.isFile()){
                 if(inputRegex.size > 0){
-                    boolean found = false;
-                    for(Pattern pattern : inputRegex){
-                        if(pattern.matcher(file.getName()).matches()){
-                            found = true;
-                            continue;
-                        }
-                    }
+                    boolean found = inputRegex.contains(p -> p.matcher(file.getName()).matches());
                     if(!found) continue;
                 }
 

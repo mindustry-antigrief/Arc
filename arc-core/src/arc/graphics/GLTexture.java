@@ -67,8 +67,10 @@ public abstract class GLTexture implements Disposable{
         if(data.useMipMaps()){
             MipMapGenerator.generateMipMap(target, pixmap, pixmap.width, pixmap.height);
         }else{
+            long s = Time.nanos();
             Gl.texImage2D(target, miplevel, pixmap.getGLInternalFormat(), pixmap.width, pixmap.height, 0,
             pixmap.getGLFormat(), pixmap.getGLType(), pixmap.pixels);
+            Log.debug("Uploaded texture in @", Time.millisSinceNanos(s));
         }
         if(disposePixmap) pixmap.dispose();
     }
