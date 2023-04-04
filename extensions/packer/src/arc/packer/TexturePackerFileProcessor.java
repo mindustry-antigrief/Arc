@@ -39,7 +39,7 @@ public class TexturePackerFileProcessor extends FileProcessor{
     }
 
     @Override
-    public Seq<Entry> process(File inputFile, File outputRoot) throws Exception{
+    public Seq<Entry> process(File inputFile, File outputRoot) throws Exception{ // Entrypoint
         root = inputFile;
 
         // Collect pack.json setting files.
@@ -137,14 +137,15 @@ public class TexturePackerFileProcessor extends FileProcessor{
     @Override
     protected void processDir(final Entry inputDir, Seq<Entry> files) throws Exception{
         if(ignoreDirs.contains(inputDir.inputFile)) return;
+        System.out.println("Processing dir: " + inputDir);
 
         // Find first parent with settings, or use defaults.
-        Settings settings = null;
+        Settings settings;
         File parent = inputDir.inputFile;
         while(true){
             settings = dirToSettings.get(parent);
             if(settings != null) break;
-            if(parent == null || parent.equals(root)) break;
+            if(parent.equals(root)) break;
             parent = parent.getParentFile();
         }
         if(settings == null) settings = defaultSettings;

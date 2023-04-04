@@ -40,10 +40,13 @@ public class TexturePacker{
                 throw new RuntimeException("If mod4 is true, maxHeight must be evenly divisible by 4: " + settings.maxHeight);
         }
 
-        if(settings.grid)
+        if(settings.grid){
+            System.out.println("Using GridPacker");
             packer = new GridPacker(settings);
-        else
+        }else{
+            System.out.println("Using MaxRectsPacker");
             packer = new MaxRectsPacker(settings);
+        }
 
         imageProcessor = new ImageProcessor(settings);
         setRootDir(rootDir);
@@ -147,10 +150,9 @@ public class TexturePacker{
 
             //sync point (touch file here)
             File outputFile;
-            while(true){
+            do {
                 outputFile = new File(packDir, imageName + (fileIndex++ == 0 ? "" : fileIndex) + "." + settings.outputFormat);
-                if(!outputFile.exists()) break;
-            }
+            } while (outputFile.exists());
             new Fi(outputFile).parent().mkdirs();
             page.imageName = outputFile.getName();
 
@@ -212,6 +214,7 @@ public class TexturePacker{
                     }
                 }
                 copy(image, 0, 0, iw, ih, canvas, rectX, rectY, rect.rotated);
+                image.dispose();
             }
 
             if(settings.bleed){
@@ -225,6 +228,7 @@ public class TexturePacker{
             }else{
                 throw new ArcRuntimeException("Unsupported image format: '" + settings.outputFormat + "'. Must be one of: apix, png");
             }
+            canvas.dispose();
         }
     }
 
@@ -247,6 +251,8 @@ public class TexturePacker{
 
         //sync point
         boolean existed = packFile.exists() && packFile.length() > 0;
+
+        System.out.println("Writing pack file " + scaledPackFileName + " | Existed: " + existed);
 
         try(Writes write = packFile.writes(true)){
             //write meta to start of file
