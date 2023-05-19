@@ -324,7 +324,7 @@ public class SdlApplication implements Application{
                     Seq<String> launchOptions = Seq.with(javaPath);
                     launchOptions.addAll((List<String>)beanClass.getMethod("getInputArguments").invoke(bean));
                     launchOptions.addAll(System.getProperties().entrySet().stream().map(it -> "-D" + it).toArray(String[]::new));
-                    launchOptions.addAll("-XstartOnFirstThread", "-jar", jar.absolutePath(), "-firstThread");
+                    launchOptions.addAll("-XstartOnFirstThread", "-jar", jar.absolutePath());
 
                     Process proc = new ProcessBuilder(launchOptions.toArray(String.class)).inheritIO().start();
                     System.exit(proc.waitFor());

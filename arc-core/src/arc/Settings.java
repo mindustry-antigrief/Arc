@@ -378,6 +378,7 @@ public class Settings{
         return (long)get(name, def);
     }
 
+    /** Do not use this it has a bad return type but needs to be kept for compat reasons */
     public Long getLong(String name){
         return getLong(name, 0);
     }
@@ -444,6 +445,19 @@ public class Settings{
         if(object instanceof Float || object instanceof Integer || object instanceof Boolean || object instanceof Long
         || object instanceof String || object instanceof byte[]){
             values.put(name, object);
+//            if (object instanceof Boolean && (Boolean) object == getBool(name)) {
+//                Log.info("Wrote boolean @ with value @ needlessly", name, object);
+//            } else if (object instanceof Integer && (Integer) object == getInt(name)) {
+//                Log.info("Wrote integer @ with value @ needlessly", name, object);
+//            } else if (object instanceof Long && (Long) object == getLong(name)) {
+//                Log.info("Wrote long @ with value @ needlessly", name, object);
+//            } else if (object instanceof Float && (Float) object == getFloat(name)) {
+//                Log.info("Wrote float @ with value @ needlessly", name, object);
+//            } else if (object instanceof String && object.equals(getString(name))) {
+//                Log.info("Wrote string @ with value @ needlessly", name, object);
+//            } else if (object instanceof byte[] && object == getBytes(name)) {
+//                Log.info("Wrote byte @ with value @ needlessly", name, object);
+//            }
             modified = true;
         }else{
             throw new IllegalArgumentException("Invalid object stored: " + (object == null ? null : object.getClass()) + ".");
