@@ -118,7 +118,7 @@ public class IOSGraphics extends Graphics{
         this.app = app;
         this.input = input;
 
-        int r = 0, g = 0, b = 0, a = 0, depth = 0, stencil = 0, samples = 0;
+        int r, g, b, a, depth, stencil = 0, samples = 0;
         if(config.colorFormat == GLKViewDrawableColorFormat.RGB565){
             r = 5;
             g = 6;
@@ -144,8 +144,17 @@ public class IOSGraphics extends Graphics{
 
         String machineString = HWMachine.getMachineString();
         IOSDevice device = IOSDevice.getDevice(machineString);
-        if(device == null) Log.err(tag, "Machine ID: " + machineString + " not found, please report!");
-        int ppi = device != null ? device.ppi : 163;
+        if(device == null){
+            Log.err(tag, "Machine ID: " + machineString + " not found, please report!");
+        }else{
+            Log.info(tag, "Device: " + device.classifier);
+        }
+
+        int ppi =
+            device != null ? device.ppi :
+            UIDevice.getCurrentDevice().getUserInterfaceIdiom() == UIUserInterfaceIdiom.Pad ? 264 :
+            163;
+
         density = device != null ? device.ppi / 160f : scale;
         ppiX = ppi;
         ppiY = ppi;
@@ -278,7 +287,7 @@ public class IOSGraphics extends Graphics{
             insets[2] = (int)(edgeInsets.getTop() * view.getContentScaleFactor());
             insets[3] = (int)(edgeInsets.getBottom() * view.getContentScaleFactor());
 
-            Log.info("Insets: @", Arrays.toString(insets));
+            Log.info("[IOSApplication] Insets: @", Arrays.toString(insets));
         }
     }
 

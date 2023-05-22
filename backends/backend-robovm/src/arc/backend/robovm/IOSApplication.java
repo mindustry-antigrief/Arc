@@ -2,6 +2,7 @@ package arc.backend.robovm;
 
 import arc.*;
 import arc.audio.*;
+import arc.backend.robovm.custom.*;
 import arc.graphics.*;
 import arc.struct.*;
 import arc.util.*;
@@ -20,9 +21,9 @@ public class IOSApplication implements Application{
     IOSApplicationConfiguration config;
     IOSGraphics graphics;
     IOSInput input;
-
-    /** The display scale factor (1.0f for normal; 2.0f to use retina coordinates/dimensions). */
+    @Nullable IOSDevice device;
     float displayScaleFactor;
+
     private CGRect lastScreenBounds = null;
 
     final Seq<ApplicationListener> listeners = new Seq<>();
@@ -45,29 +46,10 @@ public class IOSApplication implements Application{
 
         Log.info("[IOSApplication] Running in " + (Bro.IS_64BIT ? "64-bit" : "32-bit") + " mode");
 
-        float scale = (float)UIScreen.getMainScreen().getNativeScale();
-        if(scale >= 2.0f){
-            Log.info("[IOSApplication] scale: " + scale);
-            if(UIDevice.getCurrentDevice().getUserInterfaceIdiom() == UIUserInterfaceIdiom.Pad){
-                // it's an iPad!
-                displayScaleFactor = config.displayScaleLargeScreenIfRetina * scale;
-            }else{
-                // it's an iPod or iPhone
-                displayScaleFactor = config.displayScaleSmallScreenIfRetina * scale;
-            }
-        }else{
-            // no retina screen: no scaling!
-            if(UIDevice.getCurrentDevice().getUserInterfaceIdiom() == UIUserInterfaceIdiom.Pad){
-                // it's an iPad!
-                displayScaleFactor = config.displayScaleLargeScreenIfNonRetina;
-            }else{
-                // it's an iPod or iPhone
-                displayScaleFactor = config.displayScaleSmallScreenIfNonRetina;
-            }
-        }
+        displayScaleFactor = (float)UIScreen.getMainScreen().getNativeScale();
 
         this.input = createInput();
-        this.graphics = createGraphics(scale);
+        this.graphics = createGraphics(displayScaleFactor);
         Core.gl = Core.gl20 = graphics.gl20;
         Core.gl30 = graphics.gl30;
         Core.audio = new Audio();
@@ -75,6 +57,8 @@ public class IOSApplication implements Application{
         Core.files = new IOSFiles();
         Core.graphics = this.graphics;
         Core.input = this.input;
+
+        device = IOSDevice.getDevice(HWMachine.getMachineString());
 
         this.input.setupPeripherals();
 
@@ -115,41 +99,16 @@ public class IOSApplication implements Application{
      * @return dimensions of space we draw to, adjusted for device orientation
      */
     protected CGRect getBounds(){
-        final CGRect screenBounds = UIScreen.getMainScreen().getBounds();
+        final CGRect screenBounds =  UIScreen.getMainScreen().getBounds();
         final CGRect statusBarFrame = uiApp.getStatusBarFrame();
-        final UIInterfaceOrientation statusBarOrientation = uiApp.getStatusBarOrientation();
 
-        double statusBarHeight = Math.min(statusBarFrame.getWidth(), statusBarFrame.getHeight());
+        double nativeScale = UIScreen.getMainScreen().getNativeScale();
+        double statusBarHeight = Math.min(statusBarFrame.getWidth(), statusBarFrame.getHeight()) * nativeScale;
 
-        double screenWidth = screenBounds.getWidth();
-        double screenHeight = screenBounds.getHeight();
+        double screenWidth = screenBounds.getWidth() * nativeScale;
+        double screenHeight = screenBounds.getHeight() * nativeScale - statusBarHeight;
 
-        // Make sure that the orientation is consistent with ratios. Should be, but may not be on older iOS versions
-        switch(statusBarOrientation){
-            case LandscapeLeft:
-            case LandscapeRight:
-                if(screenHeight > screenWidth){
-                    Log.info("[IOSApplication] Switching reported width and height (w=" + screenWidth + " h=" + screenHeight + ")");
-                    double tmp = screenHeight;
-                    // noinspection SuspiciousNameCombination
-                    screenHeight = screenWidth;
-                    screenWidth = tmp;
-                }
-        }
-
-        // update width/height depending on display scaling selected
-        screenWidth *= displayScaleFactor;
-        screenHeight *= displayScaleFactor;
-
-        if(statusBarHeight != 0.0){
-            Log.info("[IOSApplication] Status bar is visible (height = " + statusBarHeight + ")");
-            statusBarHeight *= displayScaleFactor;
-            screenHeight -= statusBarHeight;
-        }else{
-            Log.info("[IOSApplication] Status bar is not visible");
-        }
-
-        Log.info("[IOSApplication] Total computed bounds are w=" + screenWidth + " h=" + screenHeight);
+        Log.info("[IOSApplication] Total computed bounds are w=" + screenWidth + " h=" + screenHeight + " nativeScale=" + nativeScale + " device=" + device + " statusBarHeight=" + statusBarHeight + " rawWidth=" + screenBounds.getWidth() + " rawHeight=" + screenBounds.getHeight());
 
         return lastScreenBounds = new CGRect(0.0, statusBarHeight, screenWidth, screenHeight);
     }
