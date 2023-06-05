@@ -48,27 +48,32 @@ public class Music extends AudioSource implements DownloadableAudio{
     public void load(Fi file){
         this.file = file;
 
+        ArcRuntimeException last = null;
         for(Fi result : caches(file.nameWithoutExtension() + "__" + file.length() + "." + file.extension())){
             //check if file already exists (use length as "hash")
             if(!(result.exists() && !result.isDirectory() && result.length() == file.length())){
                 //save to the cached file
                 file.copyTo(result);
             }
-            loadDirectly(result);
+            ArcRuntimeException ret = loadDirectly(result);
+            if (ret == null) return;
+            last = ret;
         }
+        throw last;
     }
 
     @Override
-    public void loadDirectly(Fi dest){
+    public ArcRuntimeException loadDirectly(Fi dest){
         try{
             handle = streamLoad(dest.file().getCanonicalPath());
         }catch(Exception e){
             try{
                 handle = streamLoad(dest.file().getAbsolutePath());
             }catch(Exception ex){
-                throw new ArcRuntimeException("Error loading music: " + dest.absolutePath(), ex);
+                return new ArcRuntimeException("Error loading music: " + dest.absolutePath(), ex);
             }
         }
+        return null;
     }
 
     public void play(){
