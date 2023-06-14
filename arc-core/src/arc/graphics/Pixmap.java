@@ -73,8 +73,7 @@ public class Pixmap implements Disposable{
      */
     public Pixmap(Fi file){
         getTrace();
-        byte[] bytes = file.readBytes();
-        load(bytes, 0, bytes.length, file.toString());
+        loadFromFile(file);
     }
 
     /** Creates a pixmap from a direct ByteBuffer. */
@@ -734,6 +733,17 @@ public class Pixmap implements Disposable{
         return (i & 0x000000ff) == 0;
     }
 
+    private void loadFromFile(Fi file){
+        if(ArcNativesLoader.loaded){
+            try{
+                long[] nativeData = new long[3];
+                pixels = loadJniFromFile(nativeData, file.absolutePath());
+            }catch(ArcRuntimeException e){
+                byte[] bytes = file.readBytes();
+                load(bytes, 0, bytes.length, file.toString());
+            }
+        }
+    }
     private void load(byte[] encodedData, int offset, int len, String file){
         //use native implementation when possible
         if(ArcNativesLoader.loaded){
@@ -871,6 +881,26 @@ public class Pixmap implements Disposable{
     #include "stb_image.h"
 
     */
+
+    /** Loads a pixmap given a filepath and returns [address, width, height] in nativeData. */
+    static native ByteBuffer loadJniFromFile(long[] nativeData, String absolutePath); /*MANUAL
+        char *path;
+        path = (*env)->GetStringUTFChars(env, absolutePath, NULL);
+
+        int32_t width, height, format;
+        const unsigned char* pixels = stbi_load(path, &width, &height, &format, STBI_rgb_alpha);
+
+        if(pixels == NULL) return NULL;
+
+        jobject pixel_buffer = env->newDirectByteBuffer((void*)pixels, width * height * 4);
+        jlong* p_native_data = (jlong*)env->GetPrimitiveArrayCritical(nativeData, 0);
+        p_native_data[0] = (jlong)pixels;
+        p_native_data[1] = width;
+        p_native_data[2] = height;
+        env->ReleasePrimitiveArrayCritical(nativeData, p_native_data, 0);
+
+        return pixel_buffer;
+        */
 
     /** Loads a pixmap from bytes and returns [address, width, height] in nativeData. */
     static native ByteBuffer loadJni(long[] nativeData, byte[] buffer, int offset, int len); /*MANUAL
