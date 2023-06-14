@@ -874,7 +874,6 @@ public class Pixmap implements Disposable{
     #include <stdlib.h>
     #define STB_IMAGE_IMPLEMENTATION
     #define STBI_FAILURE_USERMSG
-    #define STBI_NO_STDIO
     #ifdef __APPLE__
     #define STBI_NO_THREAD_LOCALS
     #endif
@@ -884,15 +883,14 @@ public class Pixmap implements Disposable{
 
     /** Loads a pixmap given a filepath and returns [address, width, height] in nativeData. */
     static native ByteBuffer loadJniFromFile(long[] nativeData, String absolutePath); /*MANUAL
-        char *path;
-        path = (*env)->GetStringUTFChars(env, absolutePath, NULL);
+        const char *path = env->GetStringUTFChars(absolutePath, 0);
 
         int32_t width, height, format;
         const unsigned char* pixels = stbi_load(path, &width, &height, &format, STBI_rgb_alpha);
 
         if(pixels == NULL) return NULL;
 
-        jobject pixel_buffer = env->newDirectByteBuffer((void*)pixels, width * height * 4);
+        jobject pixel_buffer = env->NewDirectByteBuffer((void*)pixels, width * height * 4);
         jlong* p_native_data = (jlong*)env->GetPrimitiveArrayCritical(nativeData, 0);
         p_native_data[0] = (jlong)pixels;
         p_native_data[1] = width;
