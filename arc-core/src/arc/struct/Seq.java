@@ -674,12 +674,25 @@ public class Seq<T> implements Iterable<T>, Eachable<T>{
 
     /** @return this object */
     public Seq<T> removeAll(Boolf<T> pred){
-        Iterator<T> iter = iterator();
-        while(iter.hasNext()){
-            if(pred.get(iter.next())){
-                iter.remove();
+        T[] items = this.items;
+        if(!ordered){
+            for(int i = 0; i < size; ++i){
+                if(pred.get(items[i])) remove(i);
+            }
+            return this;
+        }
+
+        int newIdx = -1;
+        int size = this.size;
+        for(int i = 0; i < size; ++i){
+            if(!pred.get(items[i]) && ++newIdx != i){
+                items[newIdx] = items[i];
             }
         }
+        for(int i = ++newIdx; i < size; ++i){
+            items[i] = null;
+        }
+        this.size = newIdx;
         return this;
     }
 
