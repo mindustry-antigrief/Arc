@@ -677,7 +677,7 @@ public class Seq<T> implements Iterable<T>, Eachable<T>{
         T[] items = this.items;
         if(!ordered){
             for(int i = 0; i < size; ++i){
-                if(pred.get(items[i])) remove(i);
+                if(pred.get(items[i])) remove(i--);
             }
             return this;
         }
