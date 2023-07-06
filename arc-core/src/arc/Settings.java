@@ -440,7 +440,7 @@ public class Settings{
         }
     }
 
-    /** Stores an object in the preference map. */
+    /** Stores an object in the preference map. To use this with integers or floats in js: Core.settings.put("name", java.lang.Integer(1)) */
     public synchronized void put(String name, Object object){
         if(object instanceof Float || object instanceof Integer || object instanceof Boolean || object instanceof Long
         || object instanceof String || object instanceof byte[]){

@@ -56,7 +56,7 @@ public class Music extends AudioSource implements DownloadableAudio{
                 file.copyTo(result);
             }
             ArcRuntimeException ret = loadDirectly(result);
-            if (ret == null) return;
+            if(ret == null) return;
             last = ret;
         }
         throw last;
