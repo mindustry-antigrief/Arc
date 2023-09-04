@@ -13,6 +13,7 @@ import java.util.*;
 
 /** Various pixmap utilities. */
 public class Pixmaps{
+    private static final int[] offsets = {1, 0, 1, 1, 0, 1, -1, 1, -1, 0, -1, -1, 0, -1, 1, -1};
     private static Pixmap drawPixmap;
     private static IntSeq tmpArray = new IntSeq();
 
