@@ -261,6 +261,11 @@ public final class Mathf{
         return start + (long)(rand.nextDouble() * (end - start));
     }
 
+    /** Returns a random boolean value. */
+    public static boolean randomBoolean(){
+        return rand.nextBoolean();
+    }
+
     /** Returns random number between 0.0 (inclusive) and 1.0 (exclusive). */
     public static float random(){
         return rand.nextFloat();
