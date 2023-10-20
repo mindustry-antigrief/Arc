@@ -13,6 +13,7 @@ import java.util.*;
 
 /** Various pixmap utilities. */
 public class Pixmaps{
+    private static final int[] offsets = {1, 0, 1, 1, 0, 1, -1, 1, -1, 0, -1, -1, 0, -1, 1, -1};
     private static Pixmap drawPixmap;
     private static IntSeq tmpArray = new IntSeq();
 
@@ -234,8 +235,6 @@ public class Pixmaps{
         drawPixmap.setRaw(0, 0, color);
         texture.draw(drawPixmap, Mathf.clamp(x, 0, texture.width - 1), Mathf.clamp(y, 0, texture.height - 1));
     }
-
-    private static final int[] offsets = {1, 0, 1, 1, 0, 1, -1, 1, -1, 0, -1, -1, 0, -1, 1, -1};
 
     /**
      * Applies alpha bleeding to the target pixmap, but with only one iteration.

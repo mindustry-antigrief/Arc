@@ -238,7 +238,7 @@ public final class Mathf{
     }
 
     public static boolean chance(double d){
-        return rand.nextFloat() < d;
+        return d >= 1f || rand.nextFloat() < d;
     }
 
     /** Returns a random number between 0 (inclusive) and the specified value (inclusive). */
@@ -259,6 +259,11 @@ public final class Mathf{
     /** Returns a random number between start (inclusive) and end (inclusive). */
     public static long random(long start, long end){
         return start + (long)(rand.nextDouble() * (end - start));
+    }
+
+    /** Returns a random boolean value. */
+    public static boolean randomBoolean(){
+        return rand.nextBoolean();
     }
 
     /** Returns random number between 0.0 (inclusive) and 1.0 (exclusive). */
