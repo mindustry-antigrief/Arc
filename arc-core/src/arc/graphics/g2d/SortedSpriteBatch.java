@@ -15,22 +15,34 @@ public class SortedSpriteBatch extends SpriteBatch{
     static ForkJoinHolder commonPool;
 
     boolean multithreaded = (Core.app.getVersion() >= 21 && !Core.app.isIOS()) || Core.app.isDesktop();
-    int[] contiguous = new int[2048], contiguousCopy = new int[2048];
-    DrawRequest[] copy = new DrawRequest[0];
-    int[] locs = new int[contiguous.length];
+    int[] contiguous, contiguousCopy, locs;
+    DrawRequest[] copy;
 
-    protected DrawRequest[] requests = new DrawRequest[10000];
+    protected DrawRequest[] requests;
     protected boolean sort;
     protected boolean flushing;
-    protected float[] requestZ = new float[10000];
+    protected float[] requestZ;
     protected int numRequests = 0;
 
     {
-        for(int i = 0; i < requests.length; i++){
-            requests[i] = new DrawRequest();
-        }
+        reset();
+    }
 
-        if(multithreaded){
+    public void reset(){
+        requests = new DrawRequest[10000];
+        copy = new DrawRequest[0];
+        requestZ = new float[10000];
+
+        contiguous = new int[2048];
+        contiguousCopy = new int[2048];
+        locs = new int[2048];
+
+        PopulateTask.src = PopulateTask.dest = null;
+
+
+        for(int i = 0; i < requests.length; i++)requests[i] = new DrawRequest();
+
+        if(multithreaded && commonPool == null){
             try{
                 commonPool = new ForkJoinHolder();
             }catch(Throwable t){
@@ -160,6 +172,7 @@ public class SortedSpriteBatch extends SpriteBatch{
 
                 if(req.run != null){
                     req.run.run();
+                    req.run = null;
                 }else if(req.texture != null){
                     super.draw(req.texture, req.vertices, 0, req.vertices.length);
                 }else{
