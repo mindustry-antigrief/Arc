@@ -706,6 +706,7 @@ public class FreeTypeFontGenerator implements Disposable{
                 float baseline = ((flipped ? -ascent : ascent) + capHeight) / scaleY;
                 glyph = generator.createGlyph(ch, this, parameter, stroker, baseline, packer);
                 if(glyph == null) return missingGlyph;
+                Log.debug("Created glyph @", (int)ch);
 
                 setGlyphRegion(glyph, regions.get(glyph.page));
                 setGlyph(ch, glyph);
