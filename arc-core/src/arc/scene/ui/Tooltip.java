@@ -8,7 +8,6 @@ import arc.math.geom.*;
 import arc.scene.*;
 import arc.scene.event.*;
 import arc.scene.ui.layout.*;
-import arc.struct.*;
 import arc.util.*;
 import arc.util.Timer.*;
 
@@ -154,7 +153,6 @@ public class Tooltip extends InputListener{
      */
     public static class Tooltips{
         private static Tooltips instance;
-        final Seq<Tooltip> shown = new Seq<>();
 
         /** Default text tooltip provider. */
         public Func<String, Tooltip> textProvider = text -> new Tooltip(t -> t.add(text));
@@ -199,7 +197,6 @@ public class Tooltip extends InputListener{
                 if(stage == null) return;
                 stage.add(showTooltip.container);
                 showTooltip.container.toFront();
-                shown.add(showTooltip);
 
                 showTooltip.container.clearActions();
                 showAction(showTooltip);
@@ -247,7 +244,6 @@ public class Tooltip extends InputListener{
             showTooltip = null;
             showTask.cancel();
             if(tooltip.container.hasParent()){
-                shown.remove(tooltip, true);
                 hideAction(tooltip);
                 resetTask.cancel();
                 Timer.schedule(resetTask, resetTime);
@@ -268,17 +264,6 @@ public class Tooltip extends InputListener{
         protected void hideAction(Tooltip tooltip){
             tooltip.container
             .addAction(sequence(parallel(alpha(0.2f, 0.2f, fade), scaleTo(0.05f, 0.05f, 0.2f, Interp.fade)), remove()));
-        }
-
-        public void hideAll(){
-            resetTask.cancel();
-            showTask.cancel();
-            time = initialTime;
-            showTooltip = null;
-
-            for(Tooltip tooltip : shown)
-                tooltip.hide();
-            shown.clear();
         }
 
         /** Shows all tooltips on hover without a delay for {@link #resetTime} seconds. */
