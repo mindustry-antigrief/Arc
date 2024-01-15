@@ -152,10 +152,10 @@ public class Lines{
     //implementation taken from https://github.com/earlygrey/shapedrawer/blob/master/drawer/src/space/earlygrey/shapedrawer/ShapeDrawer.java
     public static void polyline(float[] points, int length, boolean wrap){
         if(length < 4) return;
-        if(length == 4){ //line is faster and this method doesn't even work correctly with 2 items
-            line(points[0], points[1], points[2], points[3]);
-            return;
-        }
+//        if(length == 4){ //line is faster and this method doesn't even work correctly with 2 items
+//            line(points[0], points[1], points[2], points[3]);
+//            return;
+//        }
 
         float halfWidth = 0.5f * stroke;
 
