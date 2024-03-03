@@ -74,6 +74,10 @@ public class Tooltip extends InputListener{
 
     @Override
     public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+        if(allowMobile && Core.app.isMobile()){
+            show(event.listenerActor, x, y);
+        }
+
         if(instant){
             container.toFront();
             return true;
@@ -120,6 +124,7 @@ public class Tooltip extends InputListener{
 
     @Override
     public void enter(InputEvent event, float x, float y, int pointer, Element fromActor){
+        if(Core.app.isMobile()) return;
         if((pointer != -1 || Core.input.isTouched()) && !allowMobile) return;
         Element element = event.listenerActor;
         if(fromActor != null && fromActor.isDescendantOf(element)) return;
@@ -157,8 +162,7 @@ public class Tooltip extends InputListener{
         /** Default text tooltip provider. */
         public Func<String, Tooltip> textProvider = text -> new Tooltip(t -> t.add(text));
         /**
-         * Seconds from when an element is hovered to when the tooltip is shown. Default is 2. Call {@link #hideAll()} after changing to
-         * reset internal state.
+         * Seconds from when an element is hovered to when the tooltip is shown. Default is 2.
          */
         public float initialTime = 2;
         /** Once a tooltip is shown, this is used instead of {@link #initialTime}. Default is 0. */
@@ -169,8 +173,6 @@ public class Tooltip extends InputListener{
         public boolean enabled = true;
         /** If false, tooltips will be shown without animations. Default is true. */
         public boolean animations = false;
-        /** The maximum width. The label will wrap if needed. Default is Integer.MAX_VALUE. */
-        public float maxWidth = Integer.MAX_VALUE;
         /** The distance from the mouse position to offset the tooltip element. Default is 15,19. */
         public float offsetX = 15, offsetY = 19;
         /**
@@ -217,6 +219,12 @@ public class Tooltip extends InputListener{
 
         public Tooltip create(String text){
             return textProvider.get(text);
+        }
+
+        public Tooltip create(String text, boolean mobile){
+            Tooltip result = textProvider.get(text);
+            result.allowMobile = mobile;
+            return result;
         }
 
         public void touchDown(Tooltip tooltip){

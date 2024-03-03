@@ -3,6 +3,8 @@ package arc;
 import arc.struct.*;
 import arc.util.*;
 
+import java.net.*;
+
 public interface Application extends Disposable{
 
     /** Returns a list of all the application listeners used. */
@@ -17,9 +19,11 @@ public interface Application extends Disposable{
 
     /** Removes an application listener. */
     default void removeListener(ApplicationListener listener){
-        synchronized(getListeners()){
-            getListeners().remove(listener);
-        }
+        post(() -> {
+            synchronized(getListeners()){
+                getListeners().remove(listener);
+            }
+        });
     }
 
     /** Call this before update() in each backend. */
@@ -93,6 +97,8 @@ public interface Application extends Disposable{
     default boolean openURI(String URI){
         return false;
     }
+
+    default void getDnsServers(Seq<InetSocketAddress> out){}
 
     /** Posts a runnable on the main loop thread.*/
     void post(Runnable runnable);

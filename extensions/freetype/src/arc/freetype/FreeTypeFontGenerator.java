@@ -689,6 +689,9 @@ public class FreeTypeFontGenerator implements Disposable{
      * @author Nathan Sweet
      */
     public static class FreeTypeFontData extends FontData implements Disposable{
+        /** Set to true to disable font caching. Only use if you know what you're doing. */
+        public static boolean ignoreDirty = false;
+
         Seq<TextureRegion> regions;
 
         // Fields for incremental glyph generation.
@@ -735,7 +738,7 @@ public class FreeTypeFontGenerator implements Disposable{
         public void getGlyphs(GlyphRun run, CharSequence str, int start, int end, Glyph lastGlyph){
             if(packer != null) packer.setPackToTexture(true); // All glyphs added after this are packed directly to the texture.
             super.getGlyphs(run, str, start, end, lastGlyph);
-            if(dirty && !queued){
+            if(dirty && !queued && !ignoreDirty){
                 queued = true;
                 Core.app.post(() -> {
                     dirty = queued = false;

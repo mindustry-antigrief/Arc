@@ -19,41 +19,28 @@ import static arc.net.dns.ArcDns.dnsResolverPort;
  * <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/jndi/jndi-dns.html">JNDI DNS Service Provider</a>.
  */
 public final class JndiContextNameserverProvider implements NameserverProvider{
-    private InnerJndiContextNameserverProvider inner;
-
-    public JndiContextNameserverProvider(){
-        if(!OS.isAndroid){
-            try{
-                inner = new InnerJndiContextNameserverProvider();
-            }catch(Throwable e){
-                Log.debug("[DNS] JNDI DNS not available");
-            }
-        }
-    }
-
-    @Override
-    public void initialize(){
-        inner.initialize();
-    }
 
     @Override
     public Seq<InetSocketAddress> getNameservers(){
-        return inner.getNameservers();
+        try{
+            return new Inner().getNameservers();
+        }catch(Throwable t){
+            return new Seq<>();
+        }
     }
 
     @Override
     public boolean isEnabled(){
-        return inner != null;
+        return !OS.isAndroid && !OS.isIos;
     }
 
-    private static final class InnerJndiContextNameserverProvider extends AbstractNameserverProvider{
-        static{
-            Log.debug("[DNS] JNDI class: @", DirContext.class.getName());
-        }
+    //loading a class fails if it refers to unknown classes (javax.naming is not available on some platforms), so put it in a separate inner class
+    static class Inner implements NameserverProvider{
 
         @Override
-        public void initialize(){
-            reset();
+        public Seq<InetSocketAddress> getNameservers(){
+            Seq<InetSocketAddress> result = new Seq<>();
+
             Hashtable<String, String> env = new Hashtable<>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
             // http://mail.openjdk.java.net/pipermail/net-dev/2017-March/010695.html
@@ -84,12 +71,14 @@ public final class JndiContextNameserverProvider implements NameserverProvider{
                             port = dnsResolverPort;
                         }
 
-                        addNameServer(new InetSocketAddress(host, port));
+                        result.add(new InetSocketAddress(host, port));
                     }catch(URISyntaxException e){
                         Log.debug("[DNS] Could not parse @ as a dns server, ignoring: @", server, e);
                     }
                 }
             }
+
+            return result;
         }
     }
 }

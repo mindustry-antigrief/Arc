@@ -16,6 +16,7 @@ public class Draw{
     private static final Color[] carr = new Color[3];
     private static final float[] vertices = new float[SpriteBatch.SPRITE_SIZE];
     private static @Nullable FloatFloatf zTransformer;
+    private static float actualZ;
 
     public static float scl = 1f;
     public static float xscl = 1f, yscl = 1f;
@@ -151,12 +152,12 @@ public class Draw{
     }
 
     public static float z(){
-        return batch.z * batch.sortAscending; // batch.sortAscending ? batch.z : -batch.z
+        return actualZ;
     }
 
     /** Note that this does nothing on most Batch implementations. */
     public static void z(float z){
-        Core.batch.z(zTransformer == null ? z : zTransformer.get(z));
+        Core.batch.z(zTransformer == null ? actualZ = z : zTransformer.get(actualZ = z));
     }
 
     public static Color getColor(){
@@ -310,6 +311,43 @@ public class Draw{
         draw(z + range, end);
     }
 
+    public static void quad(TextureRegion region, float x1, float y1, float c1, float x2, float y2, float c2, float x3, float y3, float c3, float x4, float y4, float c4){
+        float mcolor = Core.batch.getPackedMixColor();
+        float u = region.u;
+        float v = region.v2;
+        float u2 = region.u2;
+        float v2 = region.v;
+        vertices[0] = x1;
+        vertices[1] = y1;
+        vertices[2] = c1;
+        vertices[3] = u;
+        vertices[4] = v;
+        vertices[5] = mcolor;
+
+        vertices[6] = x2;
+        vertices[7] = y2;
+        vertices[8] = c2;
+        vertices[9] = u;
+        vertices[10] = v2;
+        vertices[11] = mcolor;
+
+        vertices[12] = x3;
+        vertices[13] = y3;
+        vertices[14] = c3;
+        vertices[15] = u2;
+        vertices[16] = v2;
+        vertices[17] = mcolor;
+
+        vertices[18] = x4;
+        vertices[19] = y4;
+        vertices[20] = c4;
+        vertices[21] = u2;
+        vertices[22] = v;
+        vertices[23] = mcolor;
+
+        Draw.vert(region.texture, vertices, 0, vertices.length);
+    }
+
     /** Fill a white quad to the camera. */
     public static void rect(){
         Fill.rect(camera.position.x, camera.position.y, camera.width, camera.height);
@@ -372,7 +410,12 @@ public class Draw{
     }
 
     public static void flush(){
-        Core.batch.flush();
+        batch.flush();
+    }
+
+    /** Discards any pending batched sprites. */
+    public static void discard(){
+        batch.discard();
     }
 
     public static void proj(float x, float y, float w, float h){

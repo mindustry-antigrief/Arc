@@ -151,6 +151,14 @@ public class SortedSpriteBatch extends SpriteBatch{
         super.flush();
     }
 
+    @Override
+    protected void discard(){
+        if(!flushing){
+            numRequests = 0;
+        }
+        super.discard();
+    }
+
     protected void flushRequests(){
         if(!flushing && numRequests > 0){
             flushing = true;
@@ -251,7 +259,12 @@ public class SortedSpriteBatch extends SpriteBatch{
         PopulateTask.src = itemCopy;
         PopulateTask.dest = items;
         PopulateTask.locs = locs;
-        commonPool.pool.invoke(new PopulateTask(0, L));
+        //reuse the object
+        commonPool.populateTask.reinitialize();
+        commonPool.populateTask.from = 0;
+        commonPool.populateTask.to = L;
+
+        commonPool.pool.invoke(commonPool.populateTask);
     }
 
     protected void sortRequestsStandard(){ // Non-threaded implementation for weak devices
@@ -535,6 +548,9 @@ public class SortedSpriteBatch extends SpriteBatch{
         PopulateTask(int from, int to){
             this.from = from;
             this.to = to;
+        }
+
+        public PopulateTask(){
         }
 
         @Override

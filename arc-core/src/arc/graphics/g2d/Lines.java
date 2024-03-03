@@ -59,11 +59,22 @@ public class Lines{
         line(x, y, x2, y2, true);
     }
 
+    public static void line(float x, float y, Color c, float x2, float y2, Color c2){
+        line(Core.atlas.white(), x, y, c, x2, y2, c2, true);
+    }
+
     public static void line(float x, float y, float x2, float y2, boolean cap){
-        line(Core.atlas.white(), x, y, x2, y2, cap);
+        line(Core.atlas.white(), x, y, Core.batch.color, x2, y2, Core.batch.color, cap);
     }
 
     public static void line(TextureRegion region, float x, float y, float x2, float y2, boolean cap){
+        line(region, x, y, Core.batch.color, x2, y2, Core.batch.color, cap);
+    }
+
+    public static void line(TextureRegion region, float x, float y, Color c, float x2, float y2, Color c2, boolean cap){
+        float color1 = c.toFloatBits();
+        float color2 = c2.toFloatBits();
+
         if(useLegacyLine){
             float length = Mathf.dst(x, y, x2, y2) + (!cap ? 0 : stroke);
             float angle = (Mathf.atan2(x2 - x, y2 - y)) * Mathf.radDeg;
@@ -84,16 +95,19 @@ public class Lines{
 
                 x - diffx - diffy,
                 y - diffy + diffx,
+                color1,
 
                 x - diffx + diffy,
                 y - diffy - diffx,
+                color1,
 
                 x2 + diffx + diffy,
                 y2 + diffy - diffx,
+                color2,
 
                 x2 + diffx - diffy,
-                y2 + diffy + diffx
-
+                y2 + diffy + diffx,
+                color2
                 );
             }else{
                 Fill.quad(
@@ -270,20 +284,34 @@ public class Lines{
     }
 
     public static void ellipse(float x, float y, float rad, float width, float height, float rot){
+        ellipse(circleVertices(rad), x, y, width * rad, height * rad, rot);
+
+        beginLine();
         float sides = circleVertices(rad);
-        float space = 360 / sides;
+        float space = 360f / sides;
         for(int i = 0; i < sides; i++){
             float a = space * i;
             u.trns(rot,
                 rad * width * Mathf.cosDeg(a),
                 rad * height * Mathf.sinDeg(a)
             );
-            v.trns(rot,
-                rad * width * Mathf.cosDeg(a + space),
-                rad * height * Mathf.sinDeg(a + space)
-            );
-            line(x + u.x, y + u.y, x + v.x, y + v.y);
+            linePoint(x + u.x, y + u.y);
         }
+        endLine(true);
+    }
+
+    public static void ellipse(int sides, float x, float y, float width, float height, float rot){
+        beginLine();
+        float space = 360f / sides;
+        for(int i = 0; i < sides; i++){
+            float a = space * i;
+            u.trns(rot,
+            width * Mathf.cosDeg(a),
+            height * Mathf.sinDeg(a)
+            );
+            linePoint(x + u.x, y + u.y);
+        }
+        endLine(true);
     }
 
     public static void dashCircle(float x, float y, float radius){

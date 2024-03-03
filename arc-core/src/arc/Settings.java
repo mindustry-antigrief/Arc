@@ -9,7 +9,6 @@ import arc.util.io.*;
 import arc.util.serialization.*;
 
 import java.io.*;
-import java.text.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -73,7 +72,7 @@ public class Settings{
             loadValues();
             keybinds.load();
         }catch(Throwable error){
-            writeLog("Error in load: " + Strings.getStackTrace(error));
+            Log.err("Error loading settings", error);
             if(errorHandler != null){
                 if(!hasErrored) errorHandler.get(error);
             }else{
@@ -93,7 +92,7 @@ public class Settings{
             keybinds.save();
             saveValues();
         }catch(Throwable error){
-            writeLog("Error in forceSave to " + getSettingsFile() + ":\n" + Strings.getStackTrace(error));
+            Log.err("Error writing settings", error);
             if(errorHandler != null){
                 if(!hasErrored) errorHandler.get(error);
             }else{
@@ -123,13 +122,11 @@ public class Settings{
     public synchronized void loadValues(){
         //don't load settings files if neither of them exist
         if(!getSettingsFile().exists() && !getBackupSettingsFile().exists()){
-            writeLog("No settings files found: " + getSettingsFile().absolutePath() + " and " + getBackupSettingsFile().absolutePath());
             return;
         }
 
         try{
             loadValues(getSettingsFile());
-            writeLog("Loaded " + values.size() + " values");
             if(OS.hasProp("settingsOverride")) {
                 loadOverrideValues();
                 if(overrideValues.size() > 0){
@@ -141,10 +138,8 @@ public class Settings{
 
             //back up the save file, as the values have now been loaded successfully
             getSettingsFile().copyTo(getBackupSettingsFile());
-            writeLog("Backed up " + getSettingsFile() + " to " + getBackupSettingsFile() + " (" + getBackupSettingsFile().length() + " bytes)");
         }catch(Throwable e){
             Log.err("Failed to load base settings file, attempting to load backup.", e);
-            writeLog("Failed to load base file " + getSettingsFile() + ":\n" + Strings.getStackTrace(e));
 
             Seq<Fi> attempts = getBackupFolder().seq().add(getBackupSettingsFile());
             //sort with latest modified file first
@@ -152,18 +147,15 @@ public class Settings{
 
             for(Fi attempt : attempts){
                 try{
-                    writeLog("Attempting to load backup file: '" + attempt + "'. Length: " + attempt.length());
 
                     loadValues(attempt);
                     attempt.copyTo(getSettingsFile());
 
                     Log.info("Loaded backup settings file successfully!");
-                    writeLog("| Loaded backup settings file after load failure. New settings file length: " + getSettingsFile().length());
 
                     //break out of loop, we're done here
                     return;
                 }catch(Throwable e3){
-                    writeLog("| Failed to load backup file " + attempts + ":\n" + Strings.getStackTrace(e3));
                     Log.err("Failed to load backup settings file.", e3);
                 }
             }
@@ -264,8 +256,6 @@ public class Settings{
             throw new RuntimeException("Error writing preferences: " + file, e);
         }
 
-        writeLog("Saving " + values.size() + " values; " + file.length() + " bytes");
-
         executor.submit(() -> {
             //make sure two backups can't happen at once.
             synchronized(this){
@@ -361,7 +351,6 @@ public class Settings{
             byteInputStream.setBytes(getBytes(name));
             return json.readValue(type, elementType, ureader.parse(byteInputStream));
         }catch(Throwable e){
-            writeLog("Failed to write JSON key=" + name + " type=" + type + ":\n" + Strings.getStackTrace(e));
             return def.get();
         }
     }
@@ -475,15 +464,5 @@ public class Settings{
 
     public synchronized int keySize(){
         return values.size();
-    }
-
-    /** Appends to the settings log. Used for diagnosis of the save wipe bug. Never throws an error. */
-    void writeLog(String text){
-        try{
-            Fi log = getDataDirectory().child("settings.log");
-            log.writeString("[" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()) + "] " + text + "\n", true);
-        }catch(Throwable t){
-            Log.err("Failed to write settings log", t);
-        }
     }
 }

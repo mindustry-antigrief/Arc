@@ -157,6 +157,48 @@ public class PixmapPacker implements Disposable{
         return pack(name, image, null, null);
     }
 
+    /** Inserts a named empty rectangle. */
+    public synchronized Rect pack(String name, int width, int height){
+        if(disposed) return null;
+
+        PixmapPackerRect prev = null;
+        Page prevPage = null;
+        if(name != null){
+            PixmapPackerRect stored = (PixmapPackerRect)getRect(name);
+            if(stored != null && (int)stored.width == width && (int)stored.height == height){
+                prev = stored;
+                prevPage = getPage(name);
+            }
+        }
+
+        PixmapPackerRect rect = new PixmapPackerRect(0, 0, width, height);
+        if(rect.width > pageWidth || rect.height > pageHeight){
+            if(name == null) throw new ArcRuntimeException("Page size too small for pixmap.");
+            throw new ArcRuntimeException("Page size too small for pixmap: " + name);
+        }
+
+        Page page;
+        if(prev != null && prevPage != null){
+            page = prevPage;
+            rect = prev;
+
+            page.dirty = true;
+            for(int y = (int)rect.y, ey = y + (int)rect.height; y < ey; y++){
+                for(int x = (int)rect.x, ex = x + (int)rect.width; x < ex; x++){
+                    page.image.setRaw(x, y, Color.clearRgba);
+                }
+            }
+        }else{
+            page = packStrategy.pack(this, name, rect);
+            if(name != null){
+                page.rects.put(name, rect);
+                page.addedRects.add(name);
+            }
+        }
+
+        return rect;
+    }
+
     public synchronized Rect pack(@Nullable String name, PixmapRegion image, int[] splits, int[] pads){
         if(disposed) return null;
 
@@ -300,12 +342,22 @@ public class PixmapPacker implements Disposable{
     }
 
     /**
-     * Disposes any pixmap pages which don't have a texture. Page pixmaps that have a texture will not be disposed until their
-     * texture is disposed.
+     * Disposes any pixmap pages which don't have a texture. Page pixmaps that have a texture will not be disposed until their texture is disposed.
      */
+    @Override
     public synchronized void dispose(){
         for(Page page : pages){
             if(page.texture == null){
+                page.image.dispose();
+            }
+        }
+        disposed = true;
+    }
+
+    /** Disposes all images, regardless of whether they have a texture. */
+    public void forceDispose(){
+        for(Page page : pages){
+            if(page.image != null){
                 page.image.dispose();
             }
         }
@@ -322,8 +374,7 @@ public class PixmapPacker implements Disposable{
         return atlas;
     }
 
-    public synchronized void updateTextureAtlas(TextureAtlas atlas, TextureFilter minFilter, TextureFilter magFilter,
-                                                boolean useMipMaps){
+    public synchronized void updateTextureAtlas(TextureAtlas atlas, TextureFilter minFilter, TextureFilter magFilter, boolean useMipMaps){
         updateTextureAtlas(atlas, minFilter, magFilter, useMipMaps, true);
     }
 
@@ -333,9 +384,9 @@ public class PixmapPacker implements Disposable{
      * the rendering thread. This method must be called on the rendering thread. After calling this method, disposing the packer
      * will no longer dispose the page pixmaps.
      */
-    public synchronized void updateTextureAtlas(TextureAtlas atlas, TextureFilter minFilter, TextureFilter magFilter,
-                                                boolean useMipMaps, boolean clearRects){
+    public synchronized void updateTextureAtlas(TextureAtlas atlas, TextureFilter minFilter, TextureFilter magFilter, boolean useMipMaps, boolean clearRects){
         updatePageTextures(minFilter, magFilter, useMipMaps);
+
         for(Page page : pages){
             if(page.addedRects.size > 0){
                 for(String name : page.addedRects){
@@ -621,9 +672,7 @@ public class PixmapPacker implements Disposable{
                     @Override
                     public void dispose(){
                         super.dispose();
-                        if(!image.isDisposed()){
-                            image.dispose();
-                        }
+                        image.dispose();
                     }
                 };
                 texture.setFilter(minFilter, magFilter);
