@@ -40,7 +40,7 @@ public class TextureLoader extends AsynchronousAssetLoader<Texture, TextureLoade
             info.texture = parameter.texture;
         }
         if(!info.data.isPrepared()) info.data.prepare();
-        // Log.infoTag("Textures", "Async: " + fileName + " in " + Time.millisSinceNanos(start) + "ms");
+        Log.infoTag("Textures", "Async: " + fileName + " in " + Time.millisSinceNanos(start) + "ms");
     }
 
     @Override
@@ -52,7 +52,7 @@ public class TextureLoader extends AsynchronousAssetLoader<Texture, TextureLoade
         }else{
             long texS = Time.nanos();
             texture = new Texture(info.data);
-            Log.debug("Made the @ texture in @", fileName, Time.millisSinceNanos(texS));
+            Log.debug("Made the @ texture in @ms", fileName, Time.millisSinceNanos(texS));
         }
         if(parameter != null){
             texture.setFilter(parameter.minFilter, parameter.magFilter);

@@ -510,12 +510,7 @@ public class AssetManager implements Disposable{
 
     private synchronized void injectDependency(String parentAssetFilename, AssetDescriptor dependendAssetDesc){
         // add the asset as a dependency of the parent asset
-        Seq<String> dependencies = assetDependencies.get(parentAssetFilename);
-        if(dependencies == null){
-            dependencies = new Seq();
-            assetDependencies.put(parentAssetFilename, dependencies);
-        }
-        dependencies.add(dependendAssetDesc.fileName);
+        assetDependencies.get(parentAssetFilename, new Seq<>()).add(dependendAssetDesc.fileName);
 
         // if the asset is already loaded, increase its reference count.
         if(isLoaded(dependendAssetDesc.fileName)){
