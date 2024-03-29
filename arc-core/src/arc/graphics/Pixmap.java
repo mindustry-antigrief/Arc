@@ -39,9 +39,8 @@ public class Pixmap implements Disposable{
 
     private final static boolean debugCount = true, debug = false;
     public static int good, bad;
-    private String trace;
 
-    protected State state = new State(this, State.head);
+    private final State state = new State(this, State.head);
 
     /** Creates a new Pixmap instance with the given width and height. */
     public Pixmap(int width, int height){
@@ -105,7 +104,7 @@ public class Pixmap implements Disposable{
         StackTraceElement[] st = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
         for (int i = 3; i < st.length; i++) sb.append(st[i].toString()).append('\n');
-        trace = sb.toString();
+        state.trace = sb.toString();
     }
 
     /** Iterates through every position in this Pixmap. */
@@ -828,6 +827,8 @@ public class Pixmap implements Disposable{
          */
         private long handle;
 
+        private String trace;
+
         private static final ReferenceQueue<Pixmap> q = new ReferenceQueue<>();
         private static final Threads.DisposableRef<Pixmap> head = new State(q);
 
@@ -850,7 +851,7 @@ public class Pixmap implements Disposable{
         public void update(){
             State pixState;
             while((pixState = ((State)q.poll())) != null){
-                Log.err("Pixmap was not disposed: @", pixState.handle);
+                Log.err("Pixmap was not disposed: @@", pixState.handle, trace != null ? "\n" + trace : "");
                 pixState.release();
             }
         }
