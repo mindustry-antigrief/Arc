@@ -312,6 +312,16 @@ public class PixmapPacker implements Disposable{
         disposed = true;
     }
 
+    /** Disposes all images, regardless of whether they have a texture. */
+    public void forceDispose(){
+        for(Page page : pages){
+            if(page.image != null){
+                page.image.dispose();
+            }
+        }
+        disposed = true;
+    }
+
     /**
      * Generates a new {@link TextureAtlas} from the pixmaps inserted so far. After calling this method, disposing the packer will
      * no longer dispose the page pixmaps.
@@ -621,9 +631,7 @@ public class PixmapPacker implements Disposable{
                     @Override
                     public void dispose(){
                         super.dispose();
-                        if(!image.isDisposed()){
-                            image.dispose();
-                        }
+                        image.dispose();
                     }
                 };
                 texture.setFilter(minFilter, magFilter);
