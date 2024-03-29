@@ -501,21 +501,16 @@ public class AssetManager implements Disposable{
     synchronized void injectDependencies(String parentAssetFilename, Seq<AssetDescriptor> dependendAssetDescs){
         ObjectSet<String> injected = this.injected;
         for(AssetDescriptor desc : dependendAssetDescs){
-            if(injected.contains(desc.fileName)) continue; // Ignore subsequent dependencies if there are duplicates.
-            injected.add(desc.fileName);
-            injectDependency(parentAssetFilename, desc);
+            if(!injected.add(desc.fileName)) continue; // Ignore subsequent dependencies if there are duplicates.
+            injectDependency(parentAssetFilename, desc, dependendAssetDescs.size);
         }
+        if(dependendAssetDescs.any()) assetDependencies.get(parentAssetFilename).shrink();
         injected.clear();
     }
 
-    private synchronized void injectDependency(String parentAssetFilename, AssetDescriptor dependendAssetDesc){
+    private synchronized void injectDependency(String parentAssetFilename, AssetDescriptor dependendAssetDesc, int approxNumDeps){
         // add the asset as a dependency of the parent asset
-        Seq<String> dependencies = assetDependencies.get(parentAssetFilename);
-        if(dependencies == null){
-            dependencies = new Seq();
-            assetDependencies.put(parentAssetFilename, dependencies);
-        }
-        dependencies.add(dependendAssetDesc.fileName);
+        assetDependencies.get(parentAssetFilename, () -> new Seq<>(approxNumDeps)).add(dependendAssetDesc.fileName);
 
         // if the asset is already loaded, increase its reference count.
         if(isLoaded(dependendAssetDesc.fileName)){
@@ -596,7 +591,7 @@ public class AssetManager implements Disposable{
 
         // if the task has been cancelled or has finished loading
         if(complete){
-            done.put(task.assetDesc.file.name(), Time.timeSinceNanos(task.startTime) / (float)Time.nanosPerMilli);
+            done.put(task.assetDesc.file.name(), Time.millisSinceNanos(task.startTime));
             // Log.info("@ in @ms", task.assetDesc.file.name(), Time.timeSinceNanos(task.startTime) / (float)Time.nanosPerMilli);
             // increase the number of loaded assets and pop the task from the stack
             if(tasks.size == 1){
