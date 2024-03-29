@@ -38,6 +38,8 @@ public class Settings{
     protected UBJsonReader ureader = new UBJsonReader();
     protected Json json = new Json();
 
+    private static final boolean debug = false;
+
     public void setJson(Json json){
         this.json = json;
     }
@@ -329,10 +331,22 @@ public class Settings{
     }
 
     public synchronized boolean has(String name){
+        if(!loaded && debug){
+            StackTraceElement[] st = Thread.currentThread().getStackTrace();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 1; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+            Log.debug("Call to Settings.has before settings loaded:\n@", sb.substring(0, sb.length() - 1));
+        }
         return values.containsKey(name) ? true : overrideValues.containsKey(name);
     }
 
     public synchronized Object get(String name, Object defaultValue){
+        if(!loaded && debug){
+            StackTraceElement[] st = Thread.currentThread().getStackTrace();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 1; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+            Log.debug("Call to Settings.get before settings loaded:\n@", sb.substring(0, sb.length() - 1));
+        }
         return overrideValues.containsKey(name) ? overrideValues.get(name) : values.containsKey(name) ? values.get(name) : defaultValue;
     }
 
