@@ -1004,10 +1004,6 @@ public class Element{
         this.touchablility = touch;
     }
 
-    public void runUpdate(){
-        if(update != null) update.run();
-    }
-
     @Override
     public String toString(){
         String name = this.name;
