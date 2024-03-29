@@ -18,10 +18,7 @@ import arc.graphics.g2d.PixmapPacker.SkylineStrategy;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Rect;
-import arc.util.ArcRuntimeException;
-import arc.util.Buffers;
-import arc.util.Disposable;
-import arc.util.Log;
+import arc.util.*;
 import arc.util.io.Streams;
 
 import java.io.IOException;
@@ -79,7 +76,9 @@ public class FreeTypeFontGenerator implements Disposable{
         name = fontFile.pathWithoutExtension();
         int fileSize = (int)fontFile.length();
 
+        long s = Time.nanos();
         library = FreeType.initFreeType();
+        Log.info("TIME TO INIT FREETYPE: @ms", Time.millisSinceNanos(s));
 
         ByteBuffer buffer = null;
 

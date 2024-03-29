@@ -9,7 +9,7 @@ import arc.struct.Seq;
 import arc.files.Fi;
 
 /**
- * Makes {@link FreeTypeFontGenerator} managable via {@link AssetManager}.
+ * Makes {@link FreeTypeFontGenerator} manageable via {@link AssetManager}.
  * <p>
  * Do
  * {@code assetManager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(new InternalFileHandleResolver()))}
