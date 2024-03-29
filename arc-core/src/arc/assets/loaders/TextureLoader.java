@@ -15,7 +15,7 @@ import arc.util.*;
  * @author mzechner
  */
 public class TextureLoader extends AsynchronousAssetLoader<Texture, TextureLoader.TextureParameter>{
-    TextureLoaderInfo info = new TextureLoaderInfo();
+    public TextureLoaderInfo info = new TextureLoaderInfo();
 
     public TextureLoader(FileHandleResolver resolver){
         super(resolver);
@@ -51,8 +51,9 @@ public class TextureLoader extends AsynchronousAssetLoader<Texture, TextureLoade
             texture.load(info.data);
         }else{
             long texS = Time.nanos();
+            boolean prepared = info.data.isPrepared();
             texture = new Texture(info.data);
-            Log.debug("Made the @ texture in @", fileName, Time.millisSinceNanos(texS));
+            Log.debug("Made the @ texture in @ (prepared: @)", fileName, Time.millisSinceNanos(texS), prepared);
         }
         if(parameter != null){
             texture.setFilter(parameter.minFilter, parameter.magFilter);
@@ -67,9 +68,9 @@ public class TextureLoader extends AsynchronousAssetLoader<Texture, TextureLoade
     }
 
     public static class TextureLoaderInfo{
-        String filename;
-        TextureData data;
-        Texture texture;
+        public String filename;
+        public TextureData data;
+        public Texture texture;
     }
 
     public static class TextureParameter extends AssetLoaderParameters<Texture>{
