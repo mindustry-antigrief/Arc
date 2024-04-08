@@ -163,6 +163,7 @@ public class MaxRectsPacker implements Packer{
                     if(!settings.silent){
                         if(++i % 70 == 0) System.out.println();
                         System.out.print(".");
+                        System.out.flush();
                     }
                     bestWidthResult = getBest(bestWidthResult, result);
                     width = widthSearch.next(result == null);
