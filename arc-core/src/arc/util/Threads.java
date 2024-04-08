@@ -6,6 +6,7 @@ import arc.struct.*;
 
 import java.lang.ref.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 /**
  * Utilities for threaded programming.
@@ -42,8 +43,67 @@ public class Threads{
     /** @return an executor with a fixed number of threads which do not expire
      *  @param threads the number of threads */
     public static ExecutorService executor(@Nullable String name, int threads){
-        return Executors.newFixedThreadPool(threads, r -> newThread(r, name, true));
+        final AtomicInteger num = new AtomicInteger();
+        return Executors.newFixedThreadPool(threads, r -> newThread(r, threads == 1 ? name : name + "-" + num.incrementAndGet(), true));
     }
+//        if (!"Main Executor".equals(name) || threads != OS.cores) return Executors.newFixedThreadPool(threads, r -> newThread(r, threads == 1 ? name : name + "-" + num.incrementAndGet(), true));
+//        return new ThreadPoolExecutor(threads, threads,
+//            0L, TimeUnit.MILLISECONDS,
+//             new LinkedBlockingQueue<Runnable>(){
+//                @Override
+//                public void put(Runnable o) throws InterruptedException {
+//                    super.put(o);
+//                    queued.incrementAndGet();
+//                }
+//
+//                @Override
+//                public boolean offer(Runnable o, long timeout, TimeUnit unit) throws InterruptedException {
+//                    boolean r = super.offer(o, timeout, unit);
+//                    if (r) queued.incrementAndGet();
+//                    return r;
+//                }
+//
+//                @Override
+//                public boolean offer(Runnable o) {
+//                    boolean r = super.offer(o);
+//                    if (r) queued.incrementAndGet();
+//                    return r;
+//                }
+//            },
+//            r -> newThread(r, name + "-" + num.incrementAndGet(), true)) {
+//            @Override
+//            protected void afterExecute(Runnable r, Throwable t) {
+//                queued.decrementAndGet();
+//                done.incrementAndGet();
+//            }
+//            {
+//                daemon("Main Executor Watcher", () -> {
+//                    startTime = Time.millis();
+//                    while(true) {
+//                        printStats(queued.get(), done.get());
+//                        sleep(10);
+//                    }
+//                });
+//                prestartAllCoreThreads();
+//            }
+//        };
+//    }
+//
+//    private static final AtomicInteger queued = new AtomicInteger(), done = new AtomicInteger();
+//    private static long startTime, lastQ, lastD;
+//    private static void printStats(int numQueued, int numDone) {
+//        if (lastQ == numQueued && lastD == numDone) return;
+//        lastQ = numQueued;
+//        lastD = numDone;
+//        System.out.println(Strings.format("@q | @d | @t", numQueued, numDone, Time.timeSinceMillis(startTime)));
+//    }
+//
+//    private static void getTrace() {
+//        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+//        StringBuilder sb = new StringBuilder();
+//        for (int i = 3; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+//        Log.info(sb.toString());
+//    }
 
     /** @see #executor(String, int) */
     public static ExecutorService executor(int threads){
