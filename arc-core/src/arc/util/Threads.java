@@ -98,12 +98,19 @@ public class Threads{
 //        System.out.println(Strings.format("@q | @d | @t", numQueued, numDone, Time.timeSinceMillis(startTime)));
 //    }
 //
-//    private static void getTrace() {
-//        StackTraceElement[] st = Thread.currentThread().getStackTrace();
-//        StringBuilder sb = new StringBuilder();
-//        for (int i = 3; i < st.length; i++) sb.append(st[i].toString()).append('\n');
-//        Log.info(sb.toString());
-//    }
+
+    /** Prints a trace starting right before this method */
+    public static String getTrace(){
+        return getTrace(0);
+    }
+
+    /** Prints a trace starting right before this method + i lines */
+    public static String getTrace(int extraIgnoredLines){
+        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        StringBuilder sb = new StringBuilder();
+        for(int i = 2 + extraIgnoredLines; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+        return sb.toString();
+    }
 
     /** @see #executor(String, int) */
     public static ExecutorService executor(int threads){
