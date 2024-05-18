@@ -240,8 +240,6 @@ public class Fill{
 
             if(mod == 0 || sides < 4) return;
 
-            int i = sides - 1;
-
             float px = Angles.trnsx(space * (sides - 1) + rotation, radius);
             float py = Angles.trnsy(space * (sides - 1) + rotation, radius);
             float px2 = Angles.trnsx(space * sides + rotation, radius);
