@@ -101,7 +101,7 @@ public class Threads{
 
     /** Prints a trace starting right before this method */
     public static String getTrace(){
-        return getTrace(0);
+        return getTrace(1);
     }
 
     /** Prints a trace starting right before this method + i lines */
