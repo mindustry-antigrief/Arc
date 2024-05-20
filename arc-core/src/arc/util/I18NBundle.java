@@ -463,6 +463,11 @@ public class I18NBundle{
         return formatter.format(get(key), args);
     }
 
+    /** Identical to format(String, Object...) but for use in kotlin to avoid the need for a spread operator which copies the array */
+    public String formatKt(String key, Object[] args){
+        return format(key, args);
+    }
+
     public String formatString(String string, Object... args){
         return formatter.format(string, args);
     }
