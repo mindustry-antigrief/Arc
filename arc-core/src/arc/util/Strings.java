@@ -208,7 +208,7 @@ public class Strings{
     public static String sanitizeFilename(String str){
         //turn things like con.msch -> acon.msch, which is no longer reserved
         if(reservedFilenamePattern.matcher(str).matches()){
-            return "a" + str;
+            str = "a" + str;
         }
         return filenamePattern.matcher(str).replaceAll("_");
     }
