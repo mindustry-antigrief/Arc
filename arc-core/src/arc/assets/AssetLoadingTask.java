@@ -140,11 +140,11 @@ class AssetLoadingTask implements Callable<Void>{
         boolean ordered = array.ordered;
         array.ordered = true;
         for(int i = 0; i < array.size; ++i){
-            AssetDescriptor<?> ai = array.get(i);
+            AssetDescriptor ai = array.get(i);
             final String fn = ai.fileName;
-            final Class<?> type = ai.type;
+            final Class type = ai.type;
             for(int j = array.size - 1; j > i; --j){
-                AssetDescriptor<?> aj = array.get(j);
+                AssetDescriptor aj = array.get(j);
                 if(type == aj.type && fn.equals(aj.fileName))
                     array.remove(j);
             }

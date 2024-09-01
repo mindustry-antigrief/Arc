@@ -43,7 +43,7 @@ public class TextureAtlasLoader extends AsynchronousAssetLoader<TextureAtlas, Te
                 params.minFilter = page.minFilter;
                 params.magFilter = page.magFilter;
                 if(manager.getLoader(Texture.class, pageFileName).getClass() == TextureLoader.class){ // We cannot trust whatever subclass a mod may use, we should fall back to vanilla behavior
-                    if(pool == null) pool = new ExecutorCompletionService(exec = Threads.executor("Texture Atlas Loader"));
+                    if(pool == null) pool = new ExecutorCompletionService<>(exec = Threads.executor("Texture Atlas Loader"));
                     // A single TextureLoader instance cannot be used by multiple threads at once, create a new one for every page to be safe
                     TextureLoader pageLoader = new TextureLoader(manager.getFileHandleResolver());
                     numTasks++;
@@ -60,23 +60,28 @@ public class TextureAtlasLoader extends AsynchronousAssetLoader<TextureAtlas, Te
     @Override
     public TextureAtlas loadSync(AssetManager manager, String fileName, Fi atlasFile, TextureAtlasParameter parameter){
         if(pool != null){
-            long await = Time.nanos();
+            long await = Time.nanos(), block = 0, sync = 0, delayed = 0;
             try {
                 for(int i = 0; i < numTasks; i++){ // Funnily enough, the longest part of the atlas loading process is just waiting for the first page to finish loadAsync
+                    long s = Time.nanos();
                     TextureLoader pageLoader = pool.take().get();
+                    block += Time.timeSinceNanos(s);
                     AtlasPage page = data.getPages().find(p -> p.textureFile.path().replaceAll("\\\\", "/").equals(pageLoader.info.filename));
                     TextureParameter params = new TextureParameter();
                     params.genMipMaps = page.useMipMaps;
                     params.minFilter = page.minFilter;
                     params.magFilter = page.magFilter;
                     // Run the sync portion
+                    s = Time.nanos();
                     page.texture = pageLoader.loadSync(manager, pageLoader.info.filename, page.textureFile, params);
+                    delayed = Time.timeSinceNanos(s);
+                    sync += delayed;
                 }
             }catch(InterruptedException | ExecutionException e){
                 throw new ArcRuntimeException(e);
             }
             pool = null;
-            Log.debug("Awaited atlas pool for: @ms", Time.millisSinceNanos(await));
+            Log.debug("Awaited atlas pool for: @ms total | @ms block | @ms sync | @ms delayed", Time.millisSinceNanos(await), block/(float)Time.nanosPerMilli, sync/(float)Time.nanosPerMilli, delayed/(float)Time.nanosPerMilli);
         }
 
         // If a mod has caused the vanilla behavior fallback, the page textures won't have been set by the block above

@@ -46,10 +46,21 @@ public class Music extends AudioSource implements DownloadableAudio{
 
     @Override
     public void load(Fi file){
+        load(file, false);
+    }
+
+    @Override
+    public void load(Fi file, boolean alreadyRenamed){
         this.file = file;
 
+        if(alreadyRenamed && loadDirectly(file) == null) return; // This is a file we can just load directly (unless the file is located in some weirdly named directory), attempt to do so first
+
         ArcRuntimeException last = null;
-        for(Fi result : caches(file.nameWithoutExtension() + "__" + file.length() + "." + file.extension())){
+        for(Fi result : caches(alreadyRenamed ? file.name() : file.nameWithoutExtension() + "__" + file.length() + "." + file.extension())){
+            if(alreadyRenamed && !Core.app.isAndroid()){ // hack: don't redo the work if the loadDirectly() above failed as the preProcessed file is already located in the first caches() location
+                alreadyRenamed = false;
+                continue;
+            }
             //check if file already exists (use length as "hash")
             if(!(result.exists() && !result.isDirectory() && result.length() == file.length())){
                 //save to the cached file
@@ -59,11 +70,10 @@ public class Music extends AudioSource implements DownloadableAudio{
             if(ret == null) return;
             last = ret;
         }
-        throw last;
+        if(last != null) throw last;
     }
 
-    @Override
-    public ArcRuntimeException loadDirectly(Fi dest){
+    private ArcRuntimeException loadDirectly(Fi dest){
         try{
             handle = streamLoad(dest.file().getCanonicalPath());
         }catch(Exception e){

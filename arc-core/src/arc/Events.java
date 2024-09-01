@@ -12,16 +12,32 @@ public class Events{
     private static class Handler<T>{ // FINISHME: Pool these maybe? I doubt it's needed though
         private int id = ++lastId;
         private final Cons<T> cons;
+//        private final String trace;
 
         Handler(Cons<T> cons){
             this.cons = cons;
+//            trace = null;
         }
+
+//        Handler(Cons<T> cons, String trace){
+//            this.cons = cons;
+//            this.trace = trace;
+//        }
     }
+
+    public static Class<?> debugType;
 
     private static final ObjectMap<Object, Seq<Handler<?>>> events = new ObjectMap<>();
 
     /** Handle an event by class. */
     public static <T> void on(Class<T> type, Cons<T> listener){
+        String trace = null;
+//        if(type == debugType){
+//            StackTraceElement[] st = Thread.currentThread().getStackTrace();
+//            StringBuilder sb = new StringBuilder();
+//            for (int i = 2; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+//            trace = sb.toString();
+//        }
         events.get(type, () -> new Seq<>(Handler.class)).add(new Handler<>(listener));
     }
 
@@ -78,17 +94,24 @@ public class Events{
 
     public static <T> void fire(Class<?> ctype, T type){
         Seq<Handler<?>> listeners = events.get(ctype);
+//        boolean dbg = ctype == debugType;
 
         if(listeners != null){
             Iterator<Handler<T>> it = listeners.<Handler<T>>as().iterator();
+//            long tot = Time.nanos();
             while(it.hasNext()){
                 Handler<T> listener = it.next();
                 if(listener.id == -1){
                     it.remove();
                     continue;
                 }
+//                long start = Time.nanos();
                 listener.cons.get(type);
+//                if (dbg) {
+//                    Log.info("Event listener in @ms. Trace:\n@", Time.millisSinceNanos(start), listener.trace);
+//                }
             }
+//            if (dbg) Log.info("Event fired in @ms", Time.millisSinceNanos(tot));
         }
     }
 

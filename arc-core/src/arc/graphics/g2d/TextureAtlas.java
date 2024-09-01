@@ -121,7 +121,7 @@ public class TextureAtlas implements Disposable{
         return getPixmap(find(name));
     }
 
-    public PixmapRegion getPixmap(AtlasRegion region){
+    public PixmapRegion getPixmap(AtlasRegion region){ // FINISHME: Look into optimizing cases where we call the runnable below
         if(region.pixmapRegion == null){
             Pixmap pix = pixmaps.get(region.texture, () -> region.texture.getTextureData().getPixmap());
             region.pixmapRegion = new PixmapRegion(pix, region.getX(), region.getY(), region.width, region.height);

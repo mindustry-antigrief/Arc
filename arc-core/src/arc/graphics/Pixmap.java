@@ -39,9 +39,8 @@ public class Pixmap implements Disposable{
 
     private final static boolean debugCount = true, debug = false;
     public static int good, bad;
-    private String trace;
 
-    protected State state = new State(this, State.head);
+    private final State state = new State(this, State.head);
 
     /** Creates a new Pixmap instance with the given width and height. */
     public Pixmap(int width, int height){
@@ -105,21 +104,21 @@ public class Pixmap implements Disposable{
         StackTraceElement[] st = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
         for (int i = 3; i < st.length; i++) sb.append(st[i].toString()).append('\n');
-        trace = sb.toString();
+        state.trace = sb.toString();
     }
 
     /** Iterates through every position in this Pixmap. */
     public void each(Intc2 cons){
-        for(int x = 0; x < width; x++){
-            for(int y = 0; y < height; y++){
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
                 cons.get(x, y);
             }
         }
     }
 
     public void replace(IntIntf func){
-        for(int x = 0; x < width; x++){
-            for(int y = 0; y < height; y++){
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
                 setRaw(x, y, func.get(getRaw(x, y)));
             }
         }
@@ -155,8 +154,8 @@ public class Pixmap implements Disposable{
         Pixmap copy = new Pixmap(width, height);
 
         //TODO this can be optimized significantly by putting each line
-        for(int x = 0; x < width; x++){
-            for(int y = 0; y < height; y++){
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
                 copy.setRaw(x, height - 1 - y, getRaw(x, y));
             }
         }
@@ -168,8 +167,8 @@ public class Pixmap implements Disposable{
     public Pixmap flipX(){
         Pixmap copy = new Pixmap(width, height);
 
-        for(int x = 0; x < width; x++){
-            for(int y = 0; y < height; y++){
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
                 copy.set(width - 1 - x, y, getRaw(x, y));
             }
         }
@@ -187,8 +186,8 @@ public class Pixmap implements Disposable{
         Pixmap pixmap = copy();
 
         //TODO this messes with antialiasing?
-        for(int x = 0; x < width; x++){
-            for(int y = 0; y < height; y++){
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
                 if(getA(x, y) == 0){
                     boolean found = false;
                     outer:
@@ -365,6 +364,8 @@ public class Pixmap implements Disposable{
         draw(pixmap, srcx, srcy, srcWidth, srcHeight, dstx, dsty, dstWidth, dstHeight, filtering, false);
     }
 
+    public static float totalTime = 0f;
+
     /**
      * Draws an area from another Pixmap to this Pixmap. This will automatically scale and stretch the source image to the
      * specified target rectangle. Blending is currently unsupported for stretched/scaled pixmaps.
@@ -403,8 +404,41 @@ public class Pixmap implements Disposable{
                         setRaw(dx, dy, blend(pixmap.getRaw(sx, sy), getRaw(dx, dy)));
                     }
                 }
-            }else{
-                //TODO this can be optimized with scanlines, potentially
+            }else if(this.pixels != pixmap.pixels){ //make sure the buffers are different to prevent a crash
+                ByteBuffer pixels = this.pixels, otherPixels = pixmap.pixels;
+                int
+                startY = Math.max(dsty, 0),
+                endY = Math.min(dsty + Math.min(dstHeight, oheight), height),
+                startX = Math.max(dstx, 0),
+                endX = Math.min(dstx + Math.min(dstWidth, owidth), width),
+                offsetY = dsty - srcy,
+                scanX = Math.max(Math.max(srcx, -dstx), 0),
+                scanWidth = (endX - startX) * 4;
+
+                while(startY < endY){
+
+                    int offset = (startY * width + startX) * 4;
+                    int otherOffset = ((startY - offsetY) * owidth + scanX) * 4;
+
+                    pixels.position(offset);
+                    otherPixels.limit(otherOffset + scanWidth);
+                    otherPixels.position(otherOffset);
+
+                    pixels.put(otherPixels);
+
+                    //ideally I would use the method below, but it's Java 16 API (how has nobody needed to do this before then?)
+                    //pixels.put(
+                    //    (startY * width + startX) * 4, otherPixels,
+                    //    ((startY - offsetY) * owidth + scanX) * 4, scanWidth
+                    //);
+
+                    startY ++;
+                }
+
+                pixels.position(0);
+                otherPixels.position(0);
+                otherPixels.limit(otherPixels.capacity());
+            }else{ //drawing a pixmap onto itself is not a good idea, but it's better than crashing
                 for(; sy < srcy + srcHeight; sy++, dy++){
                     if(sy < 0 || dy < 0) continue;
                     if(sy >= oheight || dy >= height) break;
@@ -808,6 +842,8 @@ public class Pixmap implements Disposable{
          */
         private long handle;
 
+        private String trace;
+
         private static final ReferenceQueue<Pixmap> q = new ReferenceQueue<>();
         private static final Threads.DisposableRef<Pixmap> head = new State(q);
 
@@ -830,7 +866,7 @@ public class Pixmap implements Disposable{
         public void update(){
             State pixState;
             while((pixState = ((State)q.poll())) != null){
-                Log.err("Pixmap was not disposed: @", pixState.handle);
+                Log.err("Pixmap was not disposed: @@", pixState.handle, trace != null ? "\n" + trace : "");
                 pixState.release();
             }
         }
