@@ -26,9 +26,9 @@ public class GifRecorder{
         shiftKey = KeyCode.shiftLeft,
         switchModeKey = KeyCode.f12,
         speedMinusKey = KeyCode.minus,
-        speedPlusKeep = KeyCode.plus;
+        speedPlusKey = KeyCode.plus;
 
-    public boolean outputMp4 = false;
+    public boolean outputMp4 = true;
     public Fi exportDirectory = Core.files == null ? Fi.get("gifs") : Core.files.local("gifs");
     public float speedMultiplier = 1f;
     public float[] speedModes = {0.1f, 0.25f, 0.5f, 1f, 2f, 4f, 8f};
@@ -70,7 +70,7 @@ public class GifRecorder{
 
             int change = 0;
             if(Core.input.keyTap(speedMinusKey)) change --;
-            if(Core.input.keyTap(speedPlusKeep)) change ++;
+            if(Core.input.keyTap(speedPlusKey)) change ++;
 
             if(change != 0){
                 int idx = 3;
@@ -90,8 +90,8 @@ public class GifRecorder{
 
             if(open){
                 if(Core.input.keyDown(resizeKey) && !recording){
-                    float xs = Math.abs(wx + offsetx - Core.input.mouseX());
-                    float ys = Math.abs(wy + offsety - Core.input.mouseY());
+                    float xs = Mathf.round(Math.abs(wx + offsetx - Core.input.mouseX()), 2);
+                    float ys = Mathf.round(Math.abs(wy + offsety - Core.input.mouseY()), 2);
                     bounds.set(-xs, -ys, xs * 2, ys * 2);
                 }
 
@@ -121,8 +121,9 @@ public class GifRecorder{
                                 //pix_fmt yuv420p -profile:v baseline -level 3.0 -vcodec libx264 -crf 18 -
                                 //linux-only
                                 String args = Strings.format(
-                                "/usr/bin/ffmpeg -r @ -s @x@ -f rawvideo -pix_fmt rgba -i - -frames:v @ -filter:v vflip@ @/@.@",
+                                "/usr/bin/ffmpeg -r @ -s @x@ -f rawvideo -pix_fmt rgba -i - -frames:v @ -filter:v vflip@ @@/@.@",
                                 recordfps, (int)bounds.width, (int)bounds.height, frames.size, outputMp4 ? "" : ",split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+                                (outputMp4? "-c:v libx264 -pix_fmt yuv420p " : ""),
                                 exportDirectory.absolutePath(), new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.getDefault()).format(new Date()),
                                 outputMp4 ? "mp4" : "gif"
                                 );

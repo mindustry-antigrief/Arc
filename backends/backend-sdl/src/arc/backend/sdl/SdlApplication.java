@@ -112,12 +112,13 @@ public class SdlApplication implements Application{
 
         //show native IME candidate UI
         SDL_SetHint("SDL_IME_SHOW_UI","1");
+        SDL_SetHint("SDL_WINDOWS_DPI_SCALING", "1");
         
         //set up openGL 2.0 profile
         check(() -> SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, config.gl30 ? config.gl30Major : 2));
         check(() -> SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,  config.gl30 ? config.gl30Minor : 0));
 
-        if(config.gl30 && OS.isMac){
+        if(config.gl30 && (OS.isMac || config.coreProfile)){
             check(() -> SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE));
         }
 

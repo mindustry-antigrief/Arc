@@ -305,6 +305,17 @@ public class Seq<T> implements Iterable<T>, Eachable<T>{
         return result;
     }
 
+    public T min(Boolf<T> filter, Comparator<T> func){
+        T result = null;
+        for(int i = 0; i < size; i++){
+            T t = items[i];
+            if(filter.get(t) && (result == null || func.compare(result, t) > 0)){
+                result = t;
+            }
+        }
+        return result;
+    }
+
     public T min(Floatf<T> func){
         T result = null;
         float min = Float.MAX_VALUE;
@@ -900,16 +911,6 @@ public class Seq<T> implements Iterable<T>, Eachable<T>{
 
     /** Removes everything that does not match this predicate. */
     public Seq<T> retainAll(Boolf<T> predicate){
-        return removeAll(e -> !predicate.get(e));
-    }
-
-    /**
-     * Removes everything that does not match this predicate.
-     * @deprecated This name is misleading, as it modifies the collection!
-     * If you want a newly allocated Seq, use select. For a direct replacement, use retainAll.
-     * */
-    @Deprecated
-    public Seq<T> filter(Boolf<T> predicate){
         return removeAll(e -> !predicate.get(e));
     }
 

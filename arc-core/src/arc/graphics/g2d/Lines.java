@@ -64,16 +64,18 @@ public class Lines{
     }
 
     public static void line(float x, float y, float x2, float y2, boolean cap){
-        line(Core.atlas.white(), x, y, Core.batch.color, x2, y2, Core.batch.color, cap);
+        line(Core.atlas.white(), x, y, Core.batch.getPackedColor(), x2, y2, Core.batch.getPackedColor(), cap);
     }
 
     public static void line(TextureRegion region, float x, float y, float x2, float y2, boolean cap){
-        line(region, x, y, Core.batch.color, x2, y2, Core.batch.color, cap);
+        line(region, x, y, Core.batch.getPackedColor(), x2, y2, Core.batch.getPackedColor(), cap);
     }
 
     public static void line(TextureRegion region, float x, float y, Color c, float x2, float y2, Color c2, boolean cap){
-        float color1 = c.toFloatBits();
-        float color2 = c2.toFloatBits();
+        line(region, x, y, c.toFloatBits(), x2, y2, c2.toFloatBits(), cap);
+    }
+
+    public static void line(TextureRegion region, float x, float y, float color1, float x2, float y2, float color2, boolean cap){
 
         if(useLegacyLine){
             float length = Mathf.dst(x, y, x2, y2) + (!cap ? 0 : stroke);
@@ -358,13 +360,13 @@ public class Lines{
         polyline(floatBuilder, true);
     }
 
-    public static void poly(float x, float y, int sides, float radius, float angle){
-        float space = 360f / sides;
+    public static void poly(float x, float y, int sides, float radius, float startAngle, float endAngle){
+        float space = (endAngle - startAngle) / sides;
         float hstep = stroke / 2f / Mathf.cosDeg(space/2f);
         float r1 = radius - hstep, r2 = radius + hstep;
 
         for(int i = 0; i < sides; i++){
-            float a = space * i + angle, cos = Mathf.cosDeg(a), sin = Mathf.sinDeg(a), cos2 = Mathf.cosDeg(a + space), sin2 = Mathf.sinDeg(a + space);
+            float a = space * i + startAngle, cos = Mathf.cosDeg(a), sin = Mathf.sinDeg(a), cos2 = Mathf.cosDeg(a + space), sin2 = Mathf.sinDeg(a + space);
             Fill.quad(
             x + r1*cos, y + r1*sin,
             x + r1*cos2, y + r1*sin2,
@@ -372,6 +374,10 @@ public class Lines{
             x + r2*cos, y + r2*sin
             );
         }
+    }
+
+    public static void poly(float x, float y, int sides, float radius, float angle){
+        poly(x, y, sides, radius, angle, angle + 360);
     }
 
     public static void poly(float x, float y, int sides, float radius){

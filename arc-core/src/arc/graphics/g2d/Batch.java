@@ -7,10 +7,7 @@ import arc.util.*;
 
 /** Base batch class. Provides a mesh, texture, shader, and other state. */
 public abstract class Batch implements Disposable{
-    protected Mesh mesh;
-
     protected float z;
-    protected int sortAscending = 1;
     protected int idx = 0;
     protected Texture lastTexture = null;
 
@@ -25,14 +22,11 @@ public abstract class Batch implements Disposable{
     protected Shader shader, customShader = null;
     protected boolean ownsShader;
 
-    protected final Color color = new Color(1, 1, 1, 1);
     protected float colorPacked = Color.whiteFloatBits;
-
-    protected final Color mixColor = Color.clear;
     protected float mixColorPacked = Color.clearFloatBits;
 
     protected void z(float z){
-        this.z = z * sortAscending; // sortAscending ? z : -z
+        this.z = z;
     }
 
     /** Enables or disables Z-sorting. Flushes the batch. Only does something on supported batches. */
@@ -40,27 +34,7 @@ public abstract class Batch implements Disposable{
 
     }
 
-    /** Sets the sorting order. The batch must be flushed for this to take effect properly. */
-    protected void setSortAscending(boolean ascend){
-        sortAscending = Mathf.sign(ascend);
-    }
-
-    protected void setColor(Color tint){
-        color.set(tint);
-        colorPacked = tint.toFloatBits();
-    }
-
-    protected void setColor(float r, float g, float b, float a){
-        color.set(r, g, b, a);
-        colorPacked = color.toFloatBits();
-    }
-
-    protected Color getColor(){
-        return color;
-    }
-
     protected void setPackedColor(float packedColor){
-        this.color.abgr8888(packedColor);
         this.colorPacked = packedColor;
     }
 
@@ -68,22 +42,7 @@ public abstract class Batch implements Disposable{
         return colorPacked;
     }
 
-    protected void setMixColor(Color tint){
-        mixColor.set(tint);
-        mixColorPacked = tint.toFloatBits();
-    }
-
-    protected void setMixColor(float r, float g, float b, float a){
-        mixColor.set(r, g, b, a);
-        mixColorPacked = mixColor.toFloatBits();
-    }
-
-    protected Color getMixColor(){
-        return mixColor;
-    }
-
     protected void setPackedMixColor(float packedColor){
-        this.mixColor.abgr8888(packedColor);
         this.mixColorPacked = packedColor;
     }
 
@@ -119,9 +78,6 @@ public abstract class Batch implements Disposable{
 
     @Override
     public void dispose(){
-        if(mesh != null){
-            mesh.dispose();
-        }
         if(ownsShader && shader != null) shader.dispose();
     }
 
