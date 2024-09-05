@@ -104,12 +104,12 @@ public class Threads{
         return getTrace(1);
     }
 
-    /** Prints a trace starting right before this method + i lines */
+    /** Prints a trace starting right before this method + extraIgnoredLines lines */
     public static String getTrace(int extraIgnoredLines){
-        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        StackTraceElement[] st = new Exception().getStackTrace();
         StringBuilder sb = new StringBuilder();
-        for(int i = 2 + extraIgnoredLines; i < st.length; i++) sb.append(st[i].toString()).append('\n');
-        return sb.toString();
+        for(int i = 1 + extraIgnoredLines; i < st.length; i++) sb.append(st[i].toString()).append('\n');
+        return sb.substring(0, sb.length() - 1);
     }
 
     /** @see #executor(String, int) */

@@ -31,14 +31,13 @@ public class Settings{
     protected boolean shouldAutosave = true;
     protected boolean loaded = false;
     protected ExecutorService executor = Threads.executor("Settings Backup", 1);
+    private static final boolean debug = OS.hasProp("settingsDebug");
 
     //IO utility objects
     protected ByteArrayOutputStream byteStream = new ByteArrayOutputStream(32);
     protected ReusableByteInStream byteInputStream = new ReusableByteInStream();
     protected UBJsonReader ureader = new UBJsonReader();
     protected Json json = new Json();
-
-    private static final boolean debug = false;
 
     public void setJson(Json json){
         this.json = json;
@@ -71,6 +70,7 @@ public class Settings{
 
     /** Loads all values and keybinds. */
     public synchronized void load(){
+        if(debug) Log.warn("Settings debug enabled!"); // Can't use debug logging here as it's likely not enabled yet
         try{
             loadValues();
             keybinds.load();
@@ -134,7 +134,7 @@ public class Settings{
             writeLog("Loaded " + values.size() + " values");
             if(OS.hasProp("settingsOverride")) {
                 loadOverrideValues();
-                if(overrideValues.size() > 0){
+                if(!overrideValues.isEmpty()){
                     Log.debug("Loaded @ override values", overrideValues.size());
                 }
             } else {
@@ -331,23 +331,13 @@ public class Settings{
     }
 
     public synchronized boolean has(String name){
-        if(!loaded && debug){
-            StackTraceElement[] st = Thread.currentThread().getStackTrace();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 1; i < st.length; i++) sb.append(st[i].toString()).append('\n');
-            Log.debug("Call to Settings.has before settings loaded:\n@", sb.substring(0, sb.length() - 1));
-        }
-        return values.containsKey(name) ? true : overrideValues.containsKey(name);
+        if(!loaded && debug) Log.debug("Call to Settings.has before settings loaded:\n@", Threads.getTrace());
+        return values.containsKey(name) || overrideValues.containsKey(name);
     }
 
     public synchronized Object get(String name, Object defaultValue){
-        if(!loaded && debug){
-            StackTraceElement[] st = Thread.currentThread().getStackTrace();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 1; i < st.length; i++) sb.append(st[i].toString()).append('\n');
-            Log.debug("Call to Settings.get before settings loaded:\n@", sb.substring(0, sb.length() - 1));
-        }
-        return overrideValues.containsKey(name) ? overrideValues.get(name) : values.containsKey(name) ? values.get(name) : defaultValue;
+        if(!loaded && debug) Log.debug("Call to Settings.get before settings loaded:\n@", Threads.getTrace());
+        return overrideValues.getOrDefault(name, values.getOrDefault(name, defaultValue)); // FINISHME: We could optimize this to skip the first getOrDefault if we know overrideValues is always empty
     }
 
     public boolean isModified(){
