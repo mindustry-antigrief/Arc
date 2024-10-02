@@ -494,7 +494,7 @@ public class Lines{
         rect(rect.x, rect.y, rect.width, rect.height, 0);
     }
 
-    public static void rect(float x, float y, float width, float height, int space){
+    public static void rect(float x, float y, float width, float height, float space){
         rect(x, y, width, height, space, space);
     }
 
