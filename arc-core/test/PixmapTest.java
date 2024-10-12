@@ -1,4 +1,6 @@
 import arc.graphics.*;
+import arc.math.*;
+import arc.math.geom.*;
 import arc.util.*;
 import org.junit.*;
 
@@ -25,6 +27,44 @@ public class PixmapTest{
         assertEquals(Color.red.rgba(), pix.get(50, 50));
         assertEquals(Color.red.rgba(), pix.get(54, 54));
         assertEquals(0, pix.get(0, 0));
+    }
+
+    @Test
+    public void pixmapBounds(){
+        int x = 176;
+
+        Pixmap base = new Pixmap(176, 269);
+        Pixmap crop = new Pixmap(176, 176);
+
+        crop.draw(base, 0, 176, x, x, 0, 0, x, x, true);
+    }
+
+    static  Rect rect = new Rect();
+    static Vec2 v1 = new Vec2(), v2 = new Vec2();
+
+    static void randomize(){
+        rect.set(Mathf.random(30f), Mathf.random(30f), 8f, 8f);
+        v1.set(Mathf.random(30f), Mathf.random(30f));
+        v2.set(Mathf.random(30f), Mathf.random(30f));
+    }
+
+    @Test
+    public void raycasts(){
+
+        Vec2 hole = new Vec2();
+        int[] results = {0};
+
+        bench(() -> {
+            randomize();
+
+            results[0] += Intersector.intersectSegmentRectangle(v1, v2, rect) ? 1 : 0;
+        }, () -> {
+            randomize();
+
+            results[0] +=  Intersector.intersectSegmentRectangleFast(v1.x, v1.y, v2.x, v2.y, rect.x, rect.y, rect.width, rect.height) ? 1 : 0;
+        }, 100_000_000);
+
+        Log.info(results[0]);
     }
 
     /*
