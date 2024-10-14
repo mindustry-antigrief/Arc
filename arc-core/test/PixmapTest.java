@@ -48,24 +48,24 @@ public class PixmapTest{
         v2.set(Mathf.random(30f), Mathf.random(30f));
     }
 
-    @Test
-    public void raycasts(){
-
-        Vec2 hole = new Vec2();
-        int[] results = {0};
-
-        bench(() -> {
-            randomize();
-
-            results[0] += Intersector.intersectSegmentRectangle(v1, v2, rect) ? 1 : 0;
-        }, () -> {
-            randomize();
-
-            results[0] +=  Intersector.intersectSegmentRectangleFast(v1.x, v1.y, v2.x, v2.y, rect.x, rect.y, rect.width, rect.height) ? 1 : 0;
-        }, 100_000_000);
-
-        Log.info(results[0]);
-    }
+//    @Test
+//    public void raycasts(){
+//
+//        Vec2 hole = new Vec2();
+//        int[] results = {0};
+//
+//        bench(() -> {
+//            randomize();
+//
+//            results[0] += Intersector.intersectSegmentRectangle(v1, v2, rect) ? 1 : 0;
+//        }, () -> {
+//            randomize();
+//
+//            results[0] +=  Intersector.intersectSegmentRectangleFast(v1.x, v1.y, v2.x, v2.y, rect.x, rect.y, rect.width, rect.height) ? 1 : 0;
+//        }, 100_000_000);
+//
+//        Log.info(results[0]);
+//    }
 
     /*
     @Test
