@@ -842,7 +842,11 @@ public class TextField extends Element implements Disableable{
         int limit = forward ? text.length() : 0;
         int charOffset = forward ? 0 : -1;
         while((forward ? ++cursor < limit : --cursor > limit) && jump){
-            if(!continueCursor(cursor, charOffset)) break;
+            if(forward != continueCursor(cursor, charOffset)) break;
+        }
+        if(!jump || (forward && cursor >= limit) || (!forward && cursor <= limit)) return;
+        while((forward ? ++cursor < limit : --cursor > limit)){
+            if(forward == continueCursor(cursor, charOffset)) break;
         }
     }
 
@@ -1133,12 +1137,17 @@ public class TextField extends Element implements Disableable{
                     if(hasSelection)
                         cursor = delete(false);
                     else{
+                        boolean ctrl = Core.input.ctrl() && !Core.input.alt();
+                        boolean jump = ctrl && !passwordMode;            
                         if(backspace && cursor > 0){
-                            text = text.substring(0, cursor - 1) + text.substring(cursor--);
+                            moveCursor(false, jump);
+                            text = text.substring(0, cursor) + text.substring(oldCursor);
                             renderOffset = 0;
                         }
                         if(delete && cursor < text.length()){
-                            text = text.substring(0, cursor) + text.substring(cursor + 1);
+                            moveCursor(true, jump);
+                            text = text.substring(0, oldCursor) + text.substring(cursor);
+                            cursor = oldCursor;
                         }
                     }
                     if(add && !remove){
