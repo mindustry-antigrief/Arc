@@ -78,7 +78,7 @@ public class FreeTypeFontGenerator implements Disposable{
 
         long s = Time.nanos();
         library = FreeType.initFreeType();
-        Log.info("TIME TO INIT FREETYPE: @ms", Time.millisSinceNanos(s));
+        Log.debug("FreeType init in: @ms", Time.millisSinceNanos(s));
 
         ByteBuffer buffer = null;
 
