@@ -46,7 +46,14 @@ public class Sound extends AudioSource implements DownloadableAudio{
     public void load(Fi file){
         byte[] data = file.readBytes();
         this.file = file;
-        handle = wavLoad(data, data.length);
+        try {
+            handle = wavLoad(data, data.length);
+        } catch (ArcRuntimeException e) {
+            if (e.getMessage().contains("File found")) {
+                file.delete();
+                throw new ArcRuntimeException(file.absolutePath(), e);
+            } else throw e;
+        }
     }
 
     /**
