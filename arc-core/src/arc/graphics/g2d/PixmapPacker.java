@@ -256,18 +256,18 @@ public class PixmapPacker implements Disposable{
 
         int rectX = (int)rect.x, rectY = (int)rect.y, rectWidth = (int)rect.width, rectHeight = (int)rect.height;
 
-        if(packToTexture && !duplicateBorder && page.texture != null && !page.dirty){
-            //TODO this will not work correctly since the pixmap is only a region!
-            page.texture.bind();
-            Gl.texSubImage2D(page.texture.glTarget, 0, rectX, rectY, rectWidth, rectHeight, image.pixmap.getGLFormat(),
-                image.pixmap.getGLType(), image.pixmap.pixels);
-        }else
-            page.dirty = true;
-
         page.image.draw(image, rectX, rectY);
 
+        int x1 = rectX, x2 = rectX + rectWidth, y1 = rectY, y2 = rectY + rectHeight;
         if(duplicateBorder){
             int imageWidth = image.width, imageHeight = image.height;
+            if(rectWidth == imageWidth && rectHeight == imageHeight){
+                // Fast case: Dimensions match
+                if(y1 > 0) page.image.draw(image, 0, 0, imageWidth, 1, rectX, --y1, rectWidth, 1);
+                if(y2 < page.image.height) page.image.draw(image, 0, imageHeight - 1, imageWidth, 1, rectX, y2++, rectWidth, 1);
+                if(x1 > 0) page.image.draw(page.image, x1, y1, 1, y2 - y1, --x1, y1, 1, y2 - y1);
+                if(x2 < page.image.width) page.image.draw(page.image, x2 - 1, y1, 1, y2 - y1, x2++, y1, 1, y2 - y1);    
+            }else{
             // Copy corner pixels to fill corners of the padding.
             page.image.draw(image, 0, 0, 1, 1, rectX - 1, rectY - 1, 1, 1);
             page.image.draw(image, imageWidth - 1, 0, 1, 1, rectX + rectWidth, rectY - 1, 1, 1);
@@ -278,7 +278,29 @@ public class PixmapPacker implements Disposable{
             page.image.draw(image, 0, imageHeight - 1, imageWidth, 1, rectX, rectY + rectHeight, rectWidth, 1);
             page.image.draw(image, 0, 0, 1, imageHeight, rectX - 1, rectY, 1, rectHeight);
             page.image.draw(image, imageWidth - 1, 0, 1, imageHeight, rectX + rectWidth, rectY, 1, rectHeight);
+            if(x1 > 0) --x1;
+            if(x2 < page.image.width) ++x2;
+            if(y1 > 0) --y1;
+            if(y2 < page.image.height) ++y2;
+            }
         }
+
+        if(packToTexture && page.texture != null && !page.dirty && !page.texture.getTextureData().useMipMaps()){
+            if(pixmapToDispose != null) pixmapToDispose.dispose();
+            pixmapToDispose = page.image.crop(x1, y1, x2 - x1, y2 - y1);
+            image = new PixmapRegion(pixmapToDispose);
+            pixmapToDispose.pixels.rewind();
+
+            long s = Time.nanos();
+
+            page.texture.bind();
+            Gl.texSubImage2D(page.texture.glTarget, 0, x1, y1, x2 - x1, y2 - y1, image.pixmap.getGLFormat(),
+                    image.pixmap.getGLType(), image.pixmap.pixels);
+            Log.debug("Used texSubImage2D to upload @ in @ (duplicateBorder? @)",
+                    name,
+                    Time.millisSinceNanos(s), duplicateBorder);
+        }else
+            page.dirty = true;
 
         if(pixmapToDispose != null){
             pixmapToDispose.dispose();

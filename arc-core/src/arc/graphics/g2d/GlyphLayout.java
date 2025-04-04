@@ -97,6 +97,15 @@ public class GlyphLayout implements Poolable{
         colorStack.add(color);
         Pool<Color> colorPool = Pools.get(Color.class, Color::new);
 
+        if(markupEnabled && fontData.retainMarkup){
+            for(int i = 0; i < start; i++){
+                if(str.charAt(i) != '[') continue;
+                // Possible color tag.
+                int length = parseColorMarkup(str, i + 1, end, colorPool);
+                i += length >= 0 ? length + 1 : length == -2 ? 1 : 0;
+            }
+            color = colorStack.peek();
+        }
         int runStart = start;
         int skip = 0;
         outer:
