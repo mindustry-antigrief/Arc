@@ -3,7 +3,7 @@ ext{
     libraries = [:]
 }
 
-versions.robovm = "2.3.20"
+versions.robovm = "2.3.23"
 versions.junit = "4.11"
 versions.jnigen = "28dd11fa4c33a7ae9e58897912b52ba7d53d54fe"
 
@@ -57,7 +57,16 @@ allprojects{
             sourceCompatibility = 1.8
             targetCompatibility = 1.8
         }
+        options.compilerArgs.addAll(['--release', '8'])
         options.encoding = "UTF-8"
+    }
+
+    tasks.withType(Javadoc){
+        options{
+            addStringOption('Xdoclint:none', '-quiet')
+            addStringOption('-release', '17')
+            encoding('UTF-8')
+        }
     }
 }
 
