@@ -11,12 +11,11 @@ import arc.util.serialization.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
-
-import static arc.Core.*;
+import java.util.zip.*;
 
 public class Settings{
     protected final static byte typeBool = 0, typeInt = 1, typeLong = 2, typeFloat = 3, typeString = 4, typeBinary = 5;
-    protected final static int maxBackups = 10;
+    protected final static int maxBackups = 10, minBackupIntervalMs = 1000 * 60 * 2;
 
     //general state data
     protected Fi dataDirectory;
@@ -29,6 +28,8 @@ public class Settings{
     protected boolean hasErrored;
     protected boolean shouldAutosave = true;
     protected boolean loaded = false;
+    protected boolean writeCompressed = false;
+    private long lastBackupTime;
     protected ExecutorService executor = Threads.executor("Settings Backup", 1);
     private static final boolean debug = OS.hasProp("settingsDebug");
 
@@ -40,6 +41,10 @@ public class Settings{
 
     public void setJson(Json json){
         this.json = json;
+    }
+
+    public void setCompressed(boolean compressed){
+        this.writeCompressed = compressed;
     }
 
     public String getAppName(){
@@ -72,7 +77,6 @@ public class Settings{
         if(debug) Log.warn("Settings debug enabled!"); // Can't use debug logging here as it's likely not enabled yet
         try{
             loadValues();
-            keybinds.load();
         }catch(Throwable error){
             Log.err("Error loading settings", error);
             if(errorHandler != null){
@@ -91,7 +95,6 @@ public class Settings{
         //never loaded, nothing to save
         if(!loaded) return;
         try{
-            keybinds.save();
             saveValues();
         }catch(Throwable error){
             Log.err("Error writing settings", error);
@@ -165,13 +168,19 @@ public class Settings{
     }
 
     public synchronized void loadValues(Fi file) throws IOException{
-        try(DataInputStream stream = new DataInputStream(file.read(8192))){
+        //read the first few bytes to check if it is compressed.
+        byte[] header = new byte[2];
+        file.readBytes(header, 0, 2);
+        boolean compressed = header[0] == (byte)0x78 && (header[1] == (byte)0x01 || header[1] == (byte)0x5E || header[1] == (byte)0x9c || header[1] == (byte)0xda);
+
+        try(DataInputStream stream = new DataInputStream(compressed ? new InflaterInputStream(file.read(8192)) : file.read(8192))){
             int amount = stream.readInt();
             //current theory: when corruptions happen, the only things written to the stream are a bunch of zeroes
             //try to anticipate this case and throw an exception when 0 values are written
             if(amount <= 0) throw new IOException("0 values are not allowed.");
             for(int i = 0; i < amount; i++){
                 String key = stream.readUTF();
+
                 byte type = stream.readByte();
 
                 switch(type){
@@ -193,7 +202,7 @@ public class Settings{
                     case typeBinary:
                         int length = stream.readInt();
                         byte[] bytes = new byte[length];
-                        stream.read(bytes);
+                        stream.readFully(bytes);
                         values.put(key, bytes);
                         break;
                     default:
@@ -222,7 +231,7 @@ public class Settings{
     public synchronized void saveValues(){
         Fi file = getSettingsFile();
 
-        try(DataOutputStream stream = new DataOutputStream(file.write(false, 8192))){
+        try(DataOutputStream stream = new DataOutputStream(writeCompressed ? new FastDeflaterOutputStream(file.write(false, 8192)) : file.write(false, 8192))){
             stream.writeInt(values.size());
 
             for(Map.Entry<String, Object> entry : values.entrySet()){
@@ -258,24 +267,28 @@ public class Settings{
             throw new RuntimeException("Error writing preferences: " + file, e);
         }
 
-        executor.submit(() -> {
-            //make sure two backups can't happen at once.
-            synchronized(this){
-                Fi backupFolder = getBackupFolder();
+        if(Time.timeSinceMillis(lastBackupTime) > minBackupIntervalMs){
+            lastBackupTime = Time.millis();
 
-                Seq<Fi> previous = backupFolder.seq();
-                //make sure first file is most recent, last is oldest
-                previous.sort(Structs.comparingLong(f -> -f.lastModified()));
+            executor.submit(() -> {
+                //make sure two backups can't happen at once.
+                synchronized(this){
+                    Fi backupFolder = getBackupFolder();
 
-                //create new entry in the backup folder
-                file.copyTo(backupFolder.child(System.currentTimeMillis() + ".bin"));
+                    Seq<Fi> previous = backupFolder.seq();
+                    //make sure first file is most recent, last is oldest
+                    previous.sort(Structs.comparingLong(f -> -f.lastModified()));
 
-                //delete older backups if they exceed the max backup count
-                while(previous.size >= maxBackups){
-                    previous.pop().delete();
+                    //create new entry in the backup folder
+                    file.copyTo(backupFolder.child(System.currentTimeMillis() + ".bin"));
+
+                    //delete older backups if they exceed the max backup count
+                    while(previous.size >= maxBackups){
+                        previous.pop().delete();
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     /** Returns the file used for writing settings to. Not available on all platforms! */
