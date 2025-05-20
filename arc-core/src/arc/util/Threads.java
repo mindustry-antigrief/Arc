@@ -99,12 +99,12 @@ public class Threads{
 //    }
 //
 
-    /** Prints a trace starting right before this method */
+    /** Returns a trace starting right before this method */
     public static String getTrace(){
         return getTrace(1);
     }
 
-    /** Prints a trace starting right before this method + extraIgnoredLines lines */
+    /** Returns a trace starting right before this method + extraIgnoredLines lines */
     public static String getTrace(int extraIgnoredLines){
         StackTraceElement[] st = new Exception().getStackTrace();
         StringBuilder sb = new StringBuilder();
