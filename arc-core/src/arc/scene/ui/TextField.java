@@ -1055,12 +1055,14 @@ public class TextField extends Element implements Disableable{
             }else{
                 // Cursor movement or other keys (kills selection).
                 if(keycode == KeyCode.left){
-                    moveCursor(false, jump);
+                    if(hasSelection) cursor = Math.min(selectionStart, cursor);
+                    else moveCursor(false, jump);
                     clearSelection();
                     repeat = true;
                 }
                 if(keycode == KeyCode.right){
-                    moveCursor(true, jump);
+                    if(hasSelection) cursor = Math.max(selectionStart, cursor);
+                    else moveCursor(true, jump);
                     clearSelection();
                     repeat = true;
                 }
