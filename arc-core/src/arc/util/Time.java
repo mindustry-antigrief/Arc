@@ -135,7 +135,7 @@ public class Time{
     }
 
     public static float millisSinceNanos(long prevTime){
-        return (nanos() - prevTime) / (float)nanosPerMilli;
+        return (nanos() - prevTime) / 1000000f;
     }
 
     /**

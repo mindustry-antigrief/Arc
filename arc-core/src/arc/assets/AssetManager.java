@@ -232,6 +232,14 @@ public class AssetManager implements Disposable{
      * @return the filename of the asset or null
      */
     public synchronized <T> String getAssetFileName(T asset){
+        ObjectMap<String, RefCountedContainer> quick = assets.get(asset.getClass());
+        if(quick != null){
+            for(String name : quick.keys()){
+                Object other = quick.get(name).object;
+                if(other == asset) return name;
+            }
+        }
+
         for(Class assetType : assets.keys()){
             ObjectMap<String, RefCountedContainer> assetsByType = assets.get(assetType);
             for(String fileName : assetsByType.keys()){
@@ -572,6 +580,11 @@ public class AssetManager implements Disposable{
             assets.put(type, typeToAssets);
         }
         typeToAssets.put(fileName, new RefCountedContainer(asset));
+    }
+
+    /** Same as addAsset but its public */
+    public <T> void addAssetPublic(final String fileName, Class<T> type, T asset) {
+        addAsset(fileName, type, asset);
     }
 
     /**
