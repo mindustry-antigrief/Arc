@@ -404,14 +404,6 @@ public class IOSGraphics extends Graphics{
     }
 
     @Override
-    public void setBorderless(boolean undecorated){
-    }
-
-    @Override
-    public void setResizable(boolean resizable){
-    }
-
-    @Override
     public void setVSync(boolean vsync){
     }
 
@@ -554,6 +546,20 @@ public class IOSGraphics extends Graphics{
         @Override
         public boolean prefersHomeIndicatorAutoHidden(){
             return app.config.hideHomeIndicator;
+        }
+
+        @Override
+        public void pressesBegan(NSSet<UIPress> presses, UIPressesEvent event){
+            if(presses == null || presses.isEmpty() || !app.input.onKey(presses.getValues().first().getKey(), true)){
+                super.pressesBegan(presses, event);
+            }
+        }
+
+        @Override
+        public void pressesEnded(NSSet<UIPress> presses, UIPressesEvent event){
+            if(presses == null || presses.isEmpty() || !app.input.onKey(presses.getValues().first().getKey(), false)){
+                super.pressesEnded(presses, event);
+            }
         }
     }
 

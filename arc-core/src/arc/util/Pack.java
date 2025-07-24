@@ -1,6 +1,13 @@
 package arc.util;
 
+import arc.math.*;
+
 public class Pack{
+
+    /** Packs [0-1] texture coordinates or positions into a single float. For use in VertexAttribute.packedTexCoords/packedPosition. */
+    public static float packUv(float x, float y){
+        return Float.intBitsToFloat(((int)(Mathf.clamp(x) * 65535)) | (((int)(Mathf.clamp(y) * 65535)) << 16));
+    }
 
     /** byte -> unsigned byte */
     public static int u(byte b){
@@ -102,4 +109,9 @@ public class Pack{
     public static int intBytes(byte[] array){
         return ((0xFF & array[0]) << 24) | ((0xFF & array[1]) << 16) | ((0xFF & array[2]) << 8) | (0xFF & array[3]);
     }
+
+    public static int bitmask(int bits, int mask, boolean b){
+        return b ? bits | mask : bits & ~mask;
+    }
+
 }

@@ -289,6 +289,8 @@ public class AndroidGraphics extends Graphics implements Renderer{
                         listeners.get(i).resume();
                     }
                 }
+                //additional reset is needed for whatever reason
+                Gl.reset();
                 Log.infoTag(logTag, "[resume]");
             });
         }else{
@@ -449,11 +451,6 @@ public class AndroidGraphics extends Graphics implements Renderer{
 
     @Override
     public void setBorderless(boolean undecorated){
-    }
-
-    @Override
-    public void setResizable(boolean resizable){
-
     }
 
     @Override
