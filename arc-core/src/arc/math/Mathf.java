@@ -266,6 +266,11 @@ public final class Mathf{
         return rand.nextBoolean();
     }
 
+    /** Returns true if a random value between 0 and 1 is less than the specified value. */
+    public static boolean randomBoolean(float chance){
+        return Mathf.random() < chance;
+    }
+
     /** Returns random number between 0.0 (inclusive) and 1.0 (exclusive). */
     public static float random(){
         return rand.nextFloat();
