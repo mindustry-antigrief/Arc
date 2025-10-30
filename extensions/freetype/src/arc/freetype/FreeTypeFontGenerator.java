@@ -1,29 +1,23 @@
 package arc.freetype;
 
 import arc.*;
+import arc.files.*;
 import arc.freetype.FreeType.*;
-import arc.struct.Seq;
-import arc.files.Fi;
-import arc.graphics.Color;
-import arc.graphics.Pixmap;
-import arc.graphics.Texture.TextureFilter;
-import arc.graphics.g2d.Font;
-import arc.graphics.g2d.Font.FontData;
+import arc.graphics.*;
+import arc.graphics.Texture.*;
+import arc.graphics.g2d.*;
 import arc.graphics.g2d.Font.Glyph;
-import arc.graphics.g2d.GlyphLayout.GlyphRun;
-import arc.graphics.g2d.PixmapPacker;
-import arc.graphics.g2d.PixmapPacker.GuillotineStrategy;
-import arc.graphics.g2d.PixmapPacker.PackStrategy;
-import arc.graphics.g2d.PixmapPacker.SkylineStrategy;
-import arc.graphics.g2d.TextureRegion;
-import arc.math.Mathf;
-import arc.math.geom.Rect;
+import arc.graphics.g2d.Font.*;
+import arc.graphics.g2d.GlyphLayout.*;
+import arc.graphics.g2d.PixmapPacker.*;
+import arc.math.*;
+import arc.math.geom.*;
+import arc.struct.*;
 import arc.util.*;
-import arc.util.io.Streams;
+import arc.util.io.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
+import java.io.*;
+import java.nio.*;
 
 /**
  * Generates {@link Font} and {@link FontData} instances from TrueType, OTF, and other FreeType supported fonts.
