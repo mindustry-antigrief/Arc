@@ -10,8 +10,8 @@ import static arc.audio.Soloud.*;
 
 /**
  * <p>
- * A Sound is a short audio clip that can be played numerous times in parallel. It's completely loaded into memory so only load
- * small audio files. Call the {@link #dispose()} method when you're done using the Sound.
+ * A Sound is a short audio clip that can be played numerous times in parallel. It's completely loaded into memory, so only load
+ * small audio files.
  * </p>
  *
  * <p>
@@ -23,15 +23,17 @@ import static arc.audio.Soloud.*;
  * can use this id to modify the playback of that sound instance.
  * </p>
  *
- * <p>
- * <b>Note</b>: any values provided will not be clamped, it is the developer's responsibility to do so
- * </p>
  */
 public class Sound extends AudioSource implements DownloadableAudio{
     public AudioBus bus = Core.audio == null ? null : Core.audio.soundBus;
     public @Nullable Fi file;
 
-    long framePlayed;
+    private float falloffOffset = 0f;
+    private long minInterval = 16;
+
+    long lastTimePlayed;
+    int lastVoice;
+    float lastVolume;
 
     /** Creates an empty sound. This sound cannot be played until it is loaded. */
     public Sound(){
@@ -48,6 +50,10 @@ public class Sound extends AudioSource implements DownloadableAudio{
         this.file = file;
         try {
             handle = wavLoad(data, data.length);
+
+            if(Core.audio != null && Core.audio.defaultSoundMaxConcurrent > 0){
+                setMaxConcurrent(Core.audio.defaultSoundMaxConcurrent);
+            }
         } catch (ArcRuntimeException e) {
             if (!(file instanceof ZipFi) && e.getMessage().contains("File found")) {
                 file.delete();
@@ -65,14 +71,25 @@ public class Sound extends AudioSource implements DownloadableAudio{
      * @return the id of the sound instance if successful, or -1 on failure.
      */
     public int play(float volume, float pitch, float pan, boolean loop, boolean checkFrame){
-        if(handle == 0 || (checkFrame && framePlayed == Core.graphics.getFrameId()) || bus == null || !Core.audio.initialized) return -1;
-        framePlayed = Core.graphics.getFrameId();
+        if(handle == 0 || bus == null || !Core.audio.initialized) return -1;
+
+        if((checkFrame && Time.timeSinceMillis(lastTimePlayed) <= minInterval)){
+            //when a sound was already played this frame, intensify the volume of the last played voice instead of playing a new one
+            if(volume > lastVolume){
+                Core.audio.set(lastVoice, pan, lastVolume = Math.max(lastVolume, Math.min(lastVolume + volume, volume * 1.25f)));
+            }
+
+            return -1;
+        }
 
         if(Float.isInfinite(volume) || Float.isNaN(volume)) volume = 0f;
         if(Float.isInfinite(pan) || Float.isNaN(pan)) pan = 0f;
         if(Float.isInfinite(pitch) || Float.isNaN(pitch)) pitch = 1f;
 
-        return sourcePlayBus(handle, bus.handle, volume, Mathf.clamp(pitch * Core.audio.globalPitch, 0.0001f, 10f), Mathf.clamp(pan, -1f, 1f), loop);
+        lastVolume = volume;
+        lastTimePlayed = Time.millis();
+
+        return lastVoice = sourcePlayBus(handle, bus.handle, volume, Mathf.clamp(pitch * Core.audio.globalPitch, 0.0001f, 10f), Mathf.clamp(pan, -1f, 1f), loop);
     }
 
     /** Sets the bus that will be used for the next play of this SFX. */
@@ -98,7 +115,7 @@ public class Sound extends AudioSource implements DownloadableAudio{
     public float calcFalloff(float x, float y){
         if(Core.app.isHeadless()) return 1f;
 
-        float dst2 = Mathf.dst2(x, y, Core.camera.position.x, Core.camera.position.y);
+        float dst2 = Math.max(Mathf.dst2(x, y, Core.camera.position.x, Core.camera.position.y) - falloffOffset*falloffOffset, 0f);
         return Mathf.clamp(1f / (dst2 / Core.audio.falloff));
     }
 
@@ -118,6 +135,14 @@ public class Sound extends AudioSource implements DownloadableAudio{
         float vol = calcVolume(x, y) * volume;
         if(vol < 0.01f) return -1; //discard
         return play(vol, pitch, calcPan(x, y), false, checkFrame);
+    }
+
+    /**
+     * Plays this sound at a certain position, with correct panning and volume applied.
+     * Automatically uses the "sfxvolume" setting.
+     */
+    public int at(Position pos, float pitch, float volume){
+        return at(pos.getX(), pos.getY(), pitch, volume);
     }
 
     /**
@@ -208,8 +233,23 @@ public class Sound extends AudioSource implements DownloadableAudio{
         return play(volume, pitch, pan, true);
     }
 
+    /** @return length in seconds */
+    public float getLength(){
+        if(handle == 0 || !Core.audio.initialized) return  0f;
+        return (float)Soloud.wavLength(handle);
+    }
+
+    /** Sets the minimum interval for playbacks of this sound, in milliseconds. Additional playback within this interval will not play a new sound instance. */
+    public void setMinInterval(long interval){
+        minInterval = interval;
+    }
+
+    public void setFalloffOffset(float falloffOffset){
+        this.falloffOffset = falloffOffset;
+    }
+
     @Override
     public String toString(){
-        return "SoloudSound: " + file;
+        return "Sound: " + (file == null ? "(uninitialized)" : file);
     }
 }

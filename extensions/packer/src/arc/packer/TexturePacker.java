@@ -150,9 +150,10 @@ public class TexturePacker{
 
             //sync point (touch file here)
             File outputFile;
-            do {
-                outputFile = new File(packDir, imageName + (fileIndex++ == 0 ? "" : fileIndex) + "." + settings.outputFormat);
-            } while (outputFile.exists());
+            while(true){
+                outputFile = new File(packDir, imageName + (fileIndex++ == 0 ? "" : fileIndex) + ".png");
+                if(!outputFile.exists()) break;
+            }
             new Fi(outputFile).parent().mkdirs();
             page.imageName = outputFile.getName();
 
@@ -221,13 +222,7 @@ public class TexturePacker{
                 Pixmaps.bleed(canvas, settings.bleedIterations);
             }
 
-            if(settings.outputFormat.equalsIgnoreCase("apix")){
-                PixmapIO.writeApix(new Fi(outputFile), canvas);
-            }else if(settings.outputFormat.equalsIgnoreCase("png")){
-                PixmapIO.writePng(new Fi(outputFile), canvas);
-            }else{
-                throw new ArcRuntimeException("Unsupported image format: '" + settings.outputFormat + "'. Must be one of: apix, png");
-            }
+            PixmapIO.writePng(new Fi(outputFile), canvas);
             canvas.dispose();
         }
     }
@@ -238,9 +233,7 @@ public class TexturePacker{
                 for(int j = 0; j < h; j++)
                     dst.set(dx + j, dy + w - i - 1, src.getRaw(x + i, y + j));
         }else{
-            for(int i = 0; i < w; i++)
-                for(int j = 0; j < h; j++)
-                    dst.setRaw(dx + i, dy + j, src.getRaw(x + i, y + j));
+            dst.draw(src, x, y, w, h, dx, dy, w, h);
         }
     }
 
@@ -593,7 +586,6 @@ public class TexturePacker{
         public TextureFilter filterMin = TextureFilter.nearest, filterMag = TextureFilter.nearest;
         public TextureWrap wrapX = TextureWrap.clampToEdge, wrapY = TextureWrap.clampToEdge;
         public boolean alias = true;
-        public String outputFormat = "png";
         public boolean ignoreBlankImages = true;
         public boolean fast = true; //with fast = false packing takes an eternity, I have no idea why that wasn't the default before
         public boolean silent;

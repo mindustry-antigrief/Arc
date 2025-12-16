@@ -30,6 +30,7 @@ import java.nio.*;
  * @author badlogicgames@gmail.com
  */
 public class Pixmap implements Disposable{
+    private static final boolean supportsBufferCopy = OS.javaVersionNumber >= 16 || (OS.isAndroid && Core.app != null && Core.app.getVersion() >= 35);
 
     /** Size of the pixmap. Do not modify unless you know what you are doing. */
     public int width, height;
@@ -41,6 +42,12 @@ public class Pixmap implements Disposable{
     public static int good, bad;
 
     private final State state = new State(this, State.head);
+
+    static{
+        if(!supportsBufferCopy){
+            UnsafeBuffers.checkInit();
+        }
+    }
 
     /** Creates a new Pixmap instance with the given width and height. */
     public Pixmap(int width, int height){
@@ -92,10 +99,7 @@ public class Pixmap implements Disposable{
     /** @return a newly allocated copy with the same pixels. */
     public Pixmap copy(){
         Pixmap out = new Pixmap(width, height);
-        pixels.position(0);
-        out.pixels.position(0);
-        out.pixels.put(pixels);
-        out.pixels.position(0);
+        copyMem(pixels, 0, out.pixels, 0, pixels.capacity());
         return out;
     }
 
@@ -416,28 +420,15 @@ public class Pixmap implements Disposable{
                 scanWidth = (endX - startX) * 4;
 
                 while(startY < endY){
-
-                    int offset = (startY * width + startX) * 4;
-                    int otherOffset = ((startY - offsetY) * owidth + scanX) * 4;
-
-                    pixels.position(offset);
-                    otherPixels.limit(otherOffset + scanWidth);
-                    otherPixels.position(otherOffset);
-
-                    pixels.put(otherPixels);
-
-                    //ideally I would use the method below, but it's Java 16 API (how has nobody needed to do this before then?)
-                    //pixels.put(
-                    //    (startY * width + startX) * 4, otherPixels,
-                    //    ((startY - offsetY) * owidth + scanX) * 4, scanWidth
-                    //);
-
+                    copyMem(
+                        otherPixels,
+                        ((startY - offsetY) * owidth + scanX) * 4,
+                        pixels,
+                        (startY * width + startX) * 4,
+                        scanWidth
+                    );
                     startY ++;
                 }
-
-                pixels.position(0);
-                otherPixels.position(0);
-                otherPixels.limit(otherPixels.capacity());
             }else{ //drawing a pixmap onto itself is not a good idea, but it's better than crashing
                 for(; sy < srcy + srcHeight; sy++, dy++){
                     if(sy < 0 || dy < 0) continue;
@@ -868,6 +859,18 @@ public class Pixmap implements Disposable{
             while((pixState = ((State)q.poll())) != null){
                 Log.err("Pixmap was not disposed: @@", pixState.handle, trace != null ? "\n" + trace : "");
                 pixState.release();
+            }
+        }
+    }
+    static void copyMem(ByteBuffer src, int srcOffset, ByteBuffer dst, int dstOffset, int len){
+        //Java 16 supports direct byte buffer transfer without modifying state. Older versions (+Android/iOS) don't, and likely never will
+        if(supportsBufferCopy){
+            Java16Buffers.copy(src, srcOffset, dst, dstOffset, len);
+        }else{
+            if(!UnsafeBuffers.failed){
+                UnsafeBuffers.copy(src, srcOffset, dst, dstOffset, len);
+            }else{
+                Buffers.copyJni(src, srcOffset, dst, dstOffset, len);
             }
         }
     }

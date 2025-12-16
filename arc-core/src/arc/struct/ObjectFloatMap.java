@@ -162,6 +162,15 @@ public class ObjectFloatMap<K> implements Iterable<ObjectFloatMap.Entry<K>>{
         return this;
     }
 
+    public ObjectFloatMap<K> copy(){
+        return new ObjectFloatMap<>(this);
+    }
+
+    public void set(ObjectFloatMap<K> value){
+        clear();
+        putAll(value);
+    }
+
     /** Skips checks for existing keys. */
     private void putResize(K key, float value){
         // Check for empty buckets.
