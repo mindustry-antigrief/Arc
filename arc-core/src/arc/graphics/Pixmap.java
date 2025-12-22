@@ -44,7 +44,7 @@ public class Pixmap implements Disposable{
     private final State state = new State(this, State.head);
 
     static{
-        if(!supportsBufferCopy){
+        if(!supportsBufferCopy && !OS.isIos){
             UnsafeBuffers.checkInit();
         }
     }
@@ -867,7 +867,7 @@ public class Pixmap implements Disposable{
         if(supportsBufferCopy){
             Java16Buffers.copy(src, srcOffset, dst, dstOffset, len);
         }else{
-            if(!UnsafeBuffers.failed){
+            if(!OS.isIos && !UnsafeBuffers.failed){
                 UnsafeBuffers.copy(src, srcOffset, dst, dstOffset, len);
             }else{
                 Buffers.copyJni(src, srcOffset, dst, dstOffset, len);
