@@ -1,6 +1,7 @@
 package arc.audio;
 
 import arc.*;
+import arc.Files.*;
 import arc.files.*;
 import arc.util.*;
 

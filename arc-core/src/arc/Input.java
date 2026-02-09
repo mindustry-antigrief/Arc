@@ -235,6 +235,11 @@ public abstract class Input{
     public void getTextInput(TextInput input){
     }
 
+    /** @return on mobile, whether text input is currently being fetched. Not implemented on other platforms. */
+    public boolean isShowingTextInput(){
+        return false;
+    }
+
     /**
      * Sets the on-screen keyboard visible if available. Only applicable on mobile.
      * @param visible visible or not
@@ -355,6 +360,11 @@ public abstract class Input{
     /** @return the native orientation of the device. */
     public Orientation getNativeOrientation(){
         return Orientation.landscape;
+    }
+
+    /** Internal method for looking up a key's name based on keyboard layout. Internal use only - use {@link KeyCode#getName()} instead. */
+    public String getKeyName(KeyCode code){
+        return code.value;
     }
 
     public enum Orientation{
