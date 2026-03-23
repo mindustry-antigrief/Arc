@@ -1,3 +1,7 @@
+plugins{
+    id "com.badlogicgames.jnigen.jnigen-gradle"
+}
+
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
 sourceSets.test.resources.srcDirs = ["test/resources"]
@@ -49,6 +53,10 @@ tasks.register("recompileUnsafe", Exec){
     }
 }
 
+jar{
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 test{
     testLogging{
         exceptionFormat = 'full'
@@ -56,57 +64,47 @@ test{
     }
 }
 
-apply plugin: "com.badlogicgames.gdx.gdx-jnigen"
-
-file("jni").mkdir()
-
 jnigen{
     sharedLibName = "arc"
-    temporaryDir = file("build/target/native").absolutePath
-    libsDir = "libs"
+    libsDir = "build/natives"
+    def root = "csrc"
 
     all{
-        headerDirs += ["soloud/include"]
-        cppIncludes = ["*.cpp", "soloud/src/core/**", "soloud/src/audiosource/wav/**", "soloud/src/filter/**"]
-        cIncludes = ["*.c", "soloud/src/core/**", "soloud/src/audiosource/wav/**", "soloud/src/filter/**"]
-        cppFlags = "-DSOLOUD_MAX_VOICE_COUNT=100 " + cppFlags
+        headerDirs = ["$root/soloud/include", "$root/soloud/src/audiosource/wav", "$root"]
+        cppIncludes = ["$root/*.cpp", "$root/soloud/src/core/**.cpp", "$root/soloud/src/audiosource/wav/**.cpp", "$root/soloud/src/filter/**.cpp"]
+        cppFlags += "-DSOLOUD_MAX_VOICE_COUNT=100"
+        cFlags += ["-flto"]
+        cppFlags += ["-flto"]
+        linkerFlags += ["-flto"]
     }
-    add(Linux, x64){
-        cppIncludes += ["soloud/src/backend/miniaudio/*.cpp"]
-        cppFlags = "-DWITH_MINIAUDIO " + cppFlags
-        libraries += " -lpthread -lrt -lm -ldl"
+    addLinux(x64, x86){
+        headerDirs += (String[])["$root/soloud/src/backend/miniaudio/"]
+        cppIncludes += (String[])["$root/soloud/src/backend/miniaudio/*.cpp"]
+        cppFlags += "-DWITH_MINIAUDIO"
+        libraries += "-lpthread -lrt -lm -ldl".split(" ")
     }
-    add(Windows, x32){
-        cppIncludes += ["soloud/src/backend/miniaudio/*.cpp"]
-        cppFlags = "-msse -DWITH_MINIAUDIO " + cppFlags
+    addAndroid(){
+        linkerFlags += "-llog -lOpenSLES".split(" ")
+        cppIncludes += (String[])["$root/soloud/src/backend/opensles/*.cpp"]
+        cppFlags += ["-DWITH_OPENSLES"]
+        androidApplicationMk += ["APP_STL := c++_static"]
     }
-    add(Windows, x64){
-        cppIncludes += ["soloud/src/backend/miniaudio/*.cpp"]
-        cppFlags = "-msse -DWITH_MINIAUDIO " + cppFlags
+    addMac(x64, x86){
+        cppIncludes += (String[])["$root/soloud/src/backend/coreaudio/*.mm"]
+        cppFlags = ["-std=c++11", "-DWITH_COREAUDIO"]
+        libraries += "-Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox".split(" ")
     }
-    add(Android){
-        linkerFlags += " -llog -lOpenSLES -Wl,-z,max-page-size=0x4000"
-        cppIncludes += ["soloud/src/backend/opensles/*.cpp"]
-        cppFlags = "-DWITH_OPENSLES " + cppFlags
+    addMac(x64, ARM){
+        cppIncludes += (String[])["$root/soloud/src/backend/coreaudio/*.mm"]
+        cppFlags = ["-std=c++11", "-DWITH_COREAUDIO"]
+        libraries += "-Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox".split(" ")
     }
-    add(MacOsX, x64){
-        cppIncludes += ["soloud/src/backend/coreaudio/*.mm"]
-        cppFlags = "-std=c++11 -DWITH_COREAUDIO " + cppFlags
-        libraries += "-Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox"
-    }
-    add(MacOsX, x64, ARM){
-        cppIncludes += ["soloud/src/backend/coreaudio/*.mm"]
-        cppFlags = "-std=c++11 -DWITH_COREAUDIO " + cppFlags.replace("x86_64", "arm64")
-        cFlags = cFlags.replace("x86_64", "arm64")
-        libraries += "-Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox"
-        linkerFlags = linkerFlags.replace("x86_64", "arm64")
-    }
-    add(IOS){
-        headerDirs += ["iosgl"]
-        cppIncludes += ["soloud/src/backend/coreaudio/*.mm", "iosgl/**"]
-        cppFlags = "-stdlib=libc++ -std=c++11 -DWITH_COREAUDIO " + cppFlags
-        libraries += "-Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox"
-        linkerFlags += " -undefined dynamic_lookup "
+    addIOS(){
+        headerDirs += (String[])["$root/iosgl"]
+        cppIncludes += (String[])["$root/soloud/src/backend/coreaudio/*.mm", "$root/iosgl/**"]
+        cppFlags += ["-stdlib=libc+", "-std=c++11", "-DWITH_COREAUDIO"]
+        libraries += "-Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox".split(" ")
+        linkerFlags += "-undefined dynamic_lookup"
     }
 }
 
@@ -120,14 +118,8 @@ tasks.register('copyUnsafeStuff'){
     }
 }
 
-getTasksByName("jnigen", true).each{
-    it.dependsOn copyUnsafeStuff
-}
-
 tasks.register('cleanNatives'){
     doLast{
-        delete{ delete "$rootDir/arc-core/jni" }
-        delete{ delete "$rootDir/arc-core/libs" }
         delete{ delete "$rootDir/arc-core/csrc/soloud" }
         delete{ delete "$rootDir/arc-core/csrc/stb_image.h" }
     }
@@ -143,46 +135,11 @@ tasks.register('preJni'){
 
         if(!file("csrc/soloud").exists()){
             println "Fetching soloud source..."
-            "git clone --depth 1 --branch 2025.12.01 https://github.com/Anuken/soloud.git $rootDir/arc-core/csrc/soloud".execute().waitFor()
-        }
-
-        copy{
-            from "csrc/"
-            into "jni/"
-            include "**"
+            "git clone --depth 1 --branch $versions.soloud https://github.com/Anuken/soloud.git $rootDir/arc-core/csrc/soloud".execute().waitFor()
         }
     }
 }
-
-//copies files into the right locations
-tasks.register('postJni'){
-    doLast{
-        copy{
-            from "libs/linux64", "libs/windows32", "libs/windows64", "libs/macosx64"
-            into "${project.rootDir}/natives/natives-desktop/libs"
-            include "**"
-        }
-
-        ["arm64-v8a", "x86", "x86_64", "armeabi-v7a"].each{ p ->
-            copy{
-                from "libs/$p"
-                into "${project.rootDir}/natives/natives-android/libs/$p/"
-                include "**"
-            }
-        }
-
-        [".tvos", ""].each{ p ->
-            copy{
-                from "libs/ios32/libarc.a$p"
-                into "${project.rootDir}/natives/natives-ios/libs/"
-                include "**"
-            }
-        }
-    }
-}
-
-jnigenBuild.finalizedBy postJni
 
 getTasksByName("jnigen", true).each{
-    it.dependsOn preJni
+    it.dependsOn copyUnsafeStuff, preJni
 }

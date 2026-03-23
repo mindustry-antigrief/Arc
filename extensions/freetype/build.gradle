@@ -1,16 +1,15 @@
-apply plugin: "com.badlogicgames.gdx.gdx-jnigen"
-
-file("jni").mkdir()
+plugins{
+    id "com.badlogicgames.jnigen.jnigen-gradle"
+}
 
 jnigen{
-    def fdir = "freetype-2.14.1"
+    def fdir = "build/jnigen/sources/freetype-2.14.1"
 
     sharedLibName = "arc-freetype"
-    temporaryDir = file("build/target/native").absolutePath
-    libsDir = file("libs").absolutePath
+    libsDir = "build/natives"
 
     all{
-        headerDirs += (String[])["$fdir/include"]
+        headerDirs = ["$fdir/include", "$fdir/include/freetype", "$fdir/include/freetype/config", "$fdir/include/freetype/internal", "$fdir/include/freetype/internal/services"]
         cIncludes = [
             //BASE
             "$fdir/src/base/ftsystem.c", "$fdir/src/base/ftinit.c", "$fdir/src/base/ftdebug.c",
@@ -29,24 +28,20 @@ jnigen{
             "$fdir/src/psnames/psnames.c"
         ]
 
-        cFlags += " -DFT2_BUILD_LIBRARY"
-        cppFlags += " -DFT2_BUILD_LIBRARY"
+        cFlags += "-DFT2_BUILD_LIBRARY"
+        cppFlags += "-DFT2_BUILD_LIBRARY"
     }
-    add(Windows, x32)
-    add(Windows, x64)
-    add(Linux, x64)
-    add(MacOsX, x64)
-    add(MacOsX, x64, ARM){
-        cFlags = cppFlags = cppFlags.replace("x86_64", "arm64")
-        linkerFlags = linkerFlags.replace("x86_64", "arm64")
-    }
-    add(Android){
+    addWindows(x64, x86)
+    addLinux(x64, x86)
+    addMac(x64, x86)
+    addMac(x64, ARM)
+    addAndroid(){
         linkerFlags += " -Wl,-z,max-page-size=0x4000"
     }
-    add(IOS)
+    addIOS()
 }
 
-task preJni{
+tasks.register('preJni'){
 
     doFirst{
         copy{
@@ -55,21 +50,21 @@ task preJni{
             include "**"
         }
 
-        if(!file("$project.rootDir/extensions/freetype/jni/freetype-2.14.1").exists()){
+        if(!file("build/jnigen/sources/freetype-2.14.1").exists()){
             println "Fetching freetype source..."
 
-            def root = "$project.rootDir/extensions/freetype"
-            new File("$root/jni").mkdir()
-            def script = "wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz -O $root/jni/freetype.tar.gz\n" +
-                    "tar -xf $root/jni/freetype.tar.gz -C $root/jni"
-            def scriptFile = new File("$buildDir/getfreetype")
+            def root = "$projectDir/build/jnigen/sources"
+            file(root).mkdirs()
+            def script = "wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz -O $root/freetype.tar.gz\n" +
+                    "tar -xf $root/freetype.tar.gz -C $root"
+            def scriptFile = file("build/getfreetype")
             scriptFile.parentFile.mkdirs()
             scriptFile.text = script
             "bash $scriptFile.absolutePath".execute().waitFor()
 
             //overwrite config to use only certain modules.
-            file("$root/jni/freetype-2.14.1/include/freetype/config/ftmodule.h").text =
-            """
+            file("$root/freetype-2.14.1/include/freetype/config/ftmodule.h").text =
+                    """
             FT_USE_MODULE( FT_Module_Class, autofit_module_class )
             FT_USE_MODULE( FT_Driver_ClassRec, tt_driver_class )
             FT_USE_MODULE( FT_Module_Class, psnames_module_class )
@@ -80,33 +75,7 @@ task preJni{
     }
 }
 
-//copies files into the right locations
-task postJni{
-    doLast{
-        copy{
-            from "libs/linux64", "libs/windows32", "libs/windows64", "libs/macosx64"
-            into "../../natives/natives-freetype-desktop/libs"
-            include "**"
-        }
-
-        ["arm64-v8a", "x86", "x86_64", "armeabi-v7a"].each{ p ->
-            copy{
-                from "libs/$p"
-                into "../../natives/natives-freetype-android/libs/$p/"
-                include "**"
-            }
-        }
-
-        copy{
-            from "libs/ios32/libarc-freetype.a"
-            into "../../natives/natives-freetype-ios/libs/"
-            include "**"
-        }
-    }
-}
-
 preJni.dependsOn "compileJava"
-jnigenBuild.finalizedBy postJni
 
 getTasksByName("jnigen", true).each{
     it.dependsOn preJni

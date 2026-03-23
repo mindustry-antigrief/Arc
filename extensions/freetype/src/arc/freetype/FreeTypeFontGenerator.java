@@ -3,6 +3,7 @@ package arc.freetype;
 import arc.*;
 import arc.files.*;
 import arc.freetype.FreeType.*;
+import arc.func.*;
 import arc.graphics.*;
 import arc.graphics.Texture.*;
 import arc.graphics.g2d.*;
@@ -202,6 +203,11 @@ public class FreeTypeFontGenerator implements Disposable{
         if(data.regions.isEmpty()) throw new ArcRuntimeException("Unable to create a font with no texture regions.");
         Font font = new Font(data, data.regions, true);
         font.setOwnsTexture(parameter.packer == null);
+
+        for(Prov<Font> fallbackProv : parameter.fallback){
+            Font fallback = fallbackProv.get();
+            if(fallback != null) font.addFallback(fallback);
+        }
         return font;
     }
 
@@ -694,16 +700,50 @@ public class FreeTypeFontGenerator implements Disposable{
         PixmapPacker packer;
         Seq<Glyph> glyphs;
         private boolean dirty, queued;
+        Seq<FontData> fallback = new Seq<>();
+        @Nullable FontData override;
+
+        /** Sets a font to override the glyphs of this one, if they are available. This is the opposite of a fallback. */
+        @Override
+        public void setOverride(FontData override){
+            this.override = override;
+            override.capHeight = capHeight;
+        }
+
+        @Override
+        public void addFallback(FontData data){
+            if(data != this){
+                fallback.add(data);
+            }
+        }
 
         @Override
         public Glyph getGlyph(char ch){
+            if(override != null){
+                Glyph result = override.getGlyph(ch);
+                if(result != override.missingGlyph){
+                    setGlyph(ch, result);
+                    dirty = true;
+                    return result;
+                }
+            }
+
             Glyph glyph = super.getGlyph(ch);
             if(glyph == null && generator != null){
                 generator.setPixelSizes(0, parameter.size);
                 float baseline = ((flipped ? -ascent : ascent) + capHeight) / scaleY;
                 glyph = generator.createGlyph(ch, this, parameter, stroker, baseline, packer);
-                if(glyph == null) return missingGlyph;
-                Log.debug("Created glyph @", (int)ch);
+                if(glyph == null){
+                    //look through fallbacks for other glyphs
+                    for(FontData other : fallback){
+                        Glyph result = other.getGlyph(ch);
+                        if(result != other.missingGlyph){
+                            setGlyph(ch, result);
+                            return result;
+                        }
+                    }
+                    return missingGlyph;
+                }
 
                 setGlyphRegion(glyph, regions.get(glyph.page));
                 setGlyph(ch, glyph);
@@ -817,6 +857,8 @@ public class FreeTypeFontGenerator implements Disposable{
          * {@link FreeTypeFontGenerator#getMaxTextureSize()}.
          */
         public boolean incremental;
+        /** Fallback fonts to use. Since these fonts may only be loaded at a future time, they are providers. */
+        public Seq<Prov<Font>> fallback = new Seq<>();
     }
 
     public class GlyphAndBitmap{

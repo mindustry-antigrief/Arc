@@ -1,3 +1,15 @@
+buildscript{
+    repositories{
+        mavenCentral()
+        google()
+        maven{ url = 'https://jitpack.io' }
+    }
+
+    dependencies{
+        classpath "com.badlogicgames.jnigen:jnigen-gradle:3.1.1"
+    }
+}
+
 plugins {
     id "de.undercouch.download" version "5.0.1"
 }
@@ -9,9 +21,8 @@ ext{
 
 versions.robovm = "2.3.24"
 versions.junit = "4.11"
-//TODO: upgrade to 3.1.1 and finally get rid of the disease that is ant
-versions.jnigen = "2.5.1"
 versions.lwjgl = "3.4.2-SNAPSHOT"
+versions.soloud = "2026.02.03"
 
 libraries.robovm = [
     "com.mobidevelop.robovm:robovm-rt:${versions.robovm}",
@@ -23,10 +34,6 @@ libraries.junit = [
     "junit:junit:${versions.junit}"
 ]
 
-libraries.jnigen = [
-    "com.github.libgdx.gdx-jnigen:gdx-jnigen:$versions.jnigen"
-]
-
 libraries.lwjgl = [
     "org.lwjgl:lwjgl:${versions.lwjgl}",
     "org.lwjgl:lwjgl:${versions.lwjgl}:natives-linux",
@@ -34,28 +41,24 @@ libraries.lwjgl = [
     "org.lwjgl:lwjgl:${versions.lwjgl}:natives-macos",
     "org.lwjgl:lwjgl:${versions.lwjgl}:natives-macos-arm64",
     "org.lwjgl:lwjgl:${versions.lwjgl}:natives-windows",
-    "org.lwjgl:lwjgl:${versions.lwjgl}:natives-windows-x86",
     "org.lwjgl:lwjgl-sdl:${versions.lwjgl}",
     "org.lwjgl:lwjgl-sdl:${versions.lwjgl}:natives-linux",
     "org.lwjgl:lwjgl-sdl:${versions.lwjgl}:natives-linux-arm64",
     "org.lwjgl:lwjgl-sdl:${versions.lwjgl}:natives-macos",
     "org.lwjgl:lwjgl-sdl:${versions.lwjgl}:natives-macos-arm64",
     "org.lwjgl:lwjgl-sdl:${versions.lwjgl}:natives-windows",
-    "org.lwjgl:lwjgl-sdl:${versions.lwjgl}:natives-windows-x86",
     "org.lwjgl:lwjgl-jemalloc:${versions.lwjgl}",
     "org.lwjgl:lwjgl-jemalloc:${versions.lwjgl}:natives-linux",
     "org.lwjgl:lwjgl-jemalloc:${versions.lwjgl}:natives-linux-arm64",
     "org.lwjgl:lwjgl-jemalloc:${versions.lwjgl}:natives-macos",
     "org.lwjgl:lwjgl-jemalloc:${versions.lwjgl}:natives-macos-arm64",
     "org.lwjgl:lwjgl-jemalloc:${versions.lwjgl}:natives-windows",
-    "org.lwjgl:lwjgl-jemalloc:${versions.lwjgl}:natives-windows-x86",
     "org.lwjgl:lwjgl-opengl:${versions.lwjgl}",
     "org.lwjgl:lwjgl-opengl:${versions.lwjgl}:natives-linux",
     "org.lwjgl:lwjgl-opengl:${versions.lwjgl}:natives-linux-arm64",
     "org.lwjgl:lwjgl-opengl:${versions.lwjgl}:natives-macos",
     "org.lwjgl:lwjgl-opengl:${versions.lwjgl}:natives-macos-arm64",
     "org.lwjgl:lwjgl-opengl:${versions.lwjgl}:natives-windows",
-    "org.lwjgl:lwjgl-opengl:${versions.lwjgl}:natives-windows-x86"
 ]
 
 allprojects{
@@ -63,23 +66,11 @@ allprojects{
     group = 'com.github.mindustry-antigrief'
     version = '1.0'
 
-    buildscript{
-        repositories{
-            mavenCentral()
-            google()
-            maven{ url 'https://jitpack.io' }
-        }
-
-        dependencies{
-            classpath "com.github.libgdx.gdx-jnigen:gdx-jnigen-gradle:$versions.jnigen"
-        }
-    }
-
     repositories{
         mavenCentral()
-        maven{ url "https://central.sonatype.com/repository/maven-snapshots" }
+        maven{ url = "https://central.sonatype.com/repository/maven-snapshots" }
         google()
-        maven{ url 'https://jitpack.io' }
+        maven{ url = 'https://jitpack.io' }
     }
 
     ext.aproj = { String module ->
