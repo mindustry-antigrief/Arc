@@ -189,7 +189,8 @@ public class GlyphLayout implements Poolable{
                     run.width += xAdvances[1];
                     for(int i = 2; i < n; i++){
                         Glyph glyph = run.glyphs.get(i - 1);
-                        float glyphWidth = (glyph.width + glyph.xoffset) * fontData.scaleX - fontData.padRight;
+                        float glyphWidth = glyph.fixedWidth ? glyph.xadvance * fontData.scaleX
+                            : (glyph.width + glyph.xoffset) * fontData.scaleX - fontData.padRight;
                         if(x + glyphWidth <= targetWidth){
                             // Glyph fits.
                             x += xAdvances[i];

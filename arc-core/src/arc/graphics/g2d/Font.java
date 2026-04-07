@@ -31,8 +31,7 @@ import arc.files.Fi;
 import arc.graphics.Texture.TextureFilter;
 import arc.graphics.g2d.GlyphLayout.GlyphRun;
 import arc.graphics.g2d.TextureAtlas.AtlasRegion;
-import arc.util.ArcRuntimeException;
-import arc.util.Disposable;
+import arc.util.*;
 import arc.util.io.Streams;
 
 import java.io.BufferedReader;
@@ -391,7 +390,7 @@ public class Font implements Disposable{
         for(int index = 0, end = glyphs.length(); index < end; index++){
             Glyph g = data.getGlyph(glyphs.charAt(index));
             if(g == null) continue;
-            g.xoffset += Math.round((maxAdvance - g.xadvance) / 2);
+            g.xoffset += Math.round((maxAdvance - g.xadvance) / 2f);
             g.xadvance = maxAdvance;
             g.kerning = null;
             g.fixedWidth = true;
