@@ -319,6 +319,12 @@ public class Client extends Connection implements EndPoint{
         if(udp != null && udpRegistered && udp.needsKeepAlive(time)) sendUDP(FrameworkMessage.keepAlive);
     }
 
+    public void handleNetException(ArcNetException ex){
+        lastProtocolError = ex;
+        close();
+        throw ex;
+    }
+
     @Override
     public void run(){
         shutdown = false;
@@ -328,9 +334,7 @@ public class Client extends Connection implements EndPoint{
             }catch(IOException ex){
                 close();
             }catch(ArcNetException ex){
-                lastProtocolError = ex;
-                close();
-                throw ex;
+                handleNetException(ex);
             }
         }
     }

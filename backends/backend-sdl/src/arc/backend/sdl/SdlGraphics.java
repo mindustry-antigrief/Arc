@@ -86,14 +86,9 @@ public class SdlGraphics extends Graphics{
         logicalWidth = width;
         logicalHeight = height;
 
-        if(OS.isMac){
-            SDL_GL_GetDrawableSize(app.window, wh);
-            backBufferWidth = wh[0];
-            backBufferHeight = wh[1];
-        }else{
-            backBufferWidth = width;
-            backBufferHeight = height;
-        }
+        SDL_GL_GetDrawableSize(app.window, wh);
+        backBufferWidth = wh[0];
+        backBufferHeight = wh[1];
 
         gl20.glViewport(0, 0, backBufferWidth, backBufferHeight);
     }
@@ -199,55 +194,13 @@ public class SdlGraphics extends Graphics{
     }
 
     @Override
-    public boolean setFullscreen(){
-        int[] bounds = new int[4];
-
-        int index = SDL_GetWindowDisplayIndex(app.window);
-        if(index < 0) return false;
-
-        int result = SDL_GetDisplayBounds(index, bounds);
-        if(result != 0) return false;
-
-        SDL_SetWindowSize(app.window, bounds[2], bounds[3]);
-        SDL_SetWindowFullscreen(app.window, SDL_WINDOW_FULLSCREEN);
-        return true;
-    }
-
-    @Override
-    public boolean setWindowedMode(int width, int height){
-        SDL_SetWindowFullscreen(app.window, 0);
-        SDL_SetWindowSize(app.window, width, height);
-        return true;
+    public boolean setFullscreen(boolean fullscreen){
+        return SDL_SetWindowFullscreen(app.window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) == 0;
     }
 
     @Override
     public void setTitle(String title){
         SDL_SetWindowTitle(app.window, title);
-    }
-
-    @Override
-    public void setBorderless(boolean borderless){
-        boolean maximized = (SDL_GetWindowFlags(app.window) & SDL_WINDOW_MAXIMIZED) == SDL_WINDOW_MAXIMIZED;
-        if(maximized && OS.isLinux){
-            SDL_RestoreWindow(app.window);
-        }
-
-        int index = SDL_GetWindowDisplayIndex(app.window);
-        if(index < 0) return;
-
-        int[] bounds = new int[4];
-
-        int result = borderless ? SDL_GetDisplayBounds(index, bounds) : SDL_GetDisplayUsableBounds(index, bounds);
-        if(result != 0) return;
-
-        SDL_SetWindowBordered(app.window, !borderless);
-
-        if(maximized && OS.isLinux){
-            SDL_MaximizeWindow(app.window);
-        }
-
-        SDL_SetWindowPosition(app.window, bounds[0], bounds[1]);
-        SDL_SetWindowSize(app.window, bounds[2], bounds[3]);
     }
 
     @Override
