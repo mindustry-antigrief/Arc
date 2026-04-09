@@ -69,7 +69,6 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: '10.9'
         run: |
           ./gradlew arc-core:jnigenBuild
-       #   ./gradlew extensions:freetype:jnigenBuild
           ./gradlew backends:backend-sdl:jnigenBuildAllWindows
       - name: Upload natives
         uses: actions/upload-artifact@v5
