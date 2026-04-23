@@ -266,7 +266,7 @@ public class PixmapPacker implements Disposable{
                 if(y1 > 0) page.image.draw(image, 0, 0, imageWidth, 1, rectX, --y1, rectWidth, 1);
                 if(y2 < page.image.height) page.image.draw(image, 0, imageHeight - 1, imageWidth, 1, rectX, y2++, rectWidth, 1);
                 if(x1 > 0) page.image.draw(page.image, x1, y1, 1, y2 - y1, --x1, y1, 1, y2 - y1);
-                if(x2 < page.image.width) page.image.draw(page.image, x2 - 1, y1, 1, y2 - y1, x2++, y1, 1, y2 - y1);    
+                if(x2 < page.image.width) page.image.draw(page.image, x2 - 1, y1, 1, y2 - y1, x2++, y1, 1, y2 - y1);
             }else{
             // Copy corner pixels to fill corners of the padding.
             page.image.draw(image, 0, 0, 1, 1, rectX - 1, rectY - 1, 1, 1);
@@ -294,11 +294,8 @@ public class PixmapPacker implements Disposable{
             long s = Time.nanos();
 
             page.texture.bind();
-            Gl.texSubImage2D(page.texture.glTarget, 0, x1, y1, x2 - x1, y2 - y1, image.pixmap.getGLFormat(),
-                    image.pixmap.getGLType(), image.pixmap.pixels);
-            Log.debug("Used texSubImage2D to upload @ in @ (duplicateBorder? @)",
-                    name,
-                    Time.millisSinceNanos(s), duplicateBorder);
+            Gl.texSubImage2D(page.texture.glTarget, 0, x1, y1, x2 - x1, y2 - y1, image.pixmap.getGLFormat(), image.pixmap.getGLType(), image.pixmap.pixels);
+            Log.debug("Used texSubImage2D to upload @ in @ (duplicateBorder? @)", name, Time.millisSinceNanos(s), duplicateBorder);
         }else
             page.dirty = true;
 
