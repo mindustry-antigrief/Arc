@@ -583,7 +583,7 @@ public class AssetManager implements Disposable{
     }
 
     /** Same as addAsset but its public */
-    public <T> void addAssetPublic(final String fileName, Class<T> type, T asset) {
+    public synchronized <T> void addAssetPublic(final String fileName, Class<T> type, T asset) {
         addAsset(fileName, type, asset);
     }
 
