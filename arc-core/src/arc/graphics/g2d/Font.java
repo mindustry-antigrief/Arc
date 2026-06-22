@@ -22,23 +22,19 @@
 
 package arc.graphics.g2d;
 
-import arc.Core;
+import arc.*;
+import arc.files.*;
 import arc.graphics.*;
-import arc.struct.IntSeq;
-import arc.struct.Seq;
-import arc.struct.FloatSeq;
-import arc.files.Fi;
-import arc.graphics.Texture.TextureFilter;
-import arc.graphics.g2d.GlyphLayout.GlyphRun;
-import arc.graphics.g2d.TextureAtlas.AtlasRegion;
+import arc.graphics.Texture.*;
+import arc.graphics.g2d.GlyphLayout.*;
+import arc.graphics.g2d.TextureAtlas.*;
+import arc.struct.*;
 import arc.util.*;
-import arc.util.io.Streams;
+import arc.util.io.*;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
 /**
  * Renders bitmap fonts. The font consists of 2 files: an image file or {@link TextureRegion} containing the glyphs and a file in
@@ -870,12 +866,10 @@ public class Font implements Disposable{
             Glyph missingGlyph = this.missingGlyph;
             Seq<Glyph> glyphs = run.glyphs;
             FloatSeq xAdvances = run.xAdvances;
-            IntSeq textPositions = run.textPositions;
 
             // Guess at number of glyphs needed.
             glyphs.ensureCapacity(end - start);
             xAdvances.ensureCapacity(end - start + 1);
-            textPositions.ensureCapacity(end - start);
 
             while(start < end){
                 char ch = str.charAt(start++);
@@ -886,7 +880,6 @@ public class Font implements Disposable{
                 }
 
                 glyphs.add(glyph);
-                textPositions.add(start - 1);
 
                 if(lastGlyph == null) // First glyph on line, adjust the position so it isn't drawn left of 0.
                     xAdvances.add(glyph.fixedWidth ? 0 : -glyph.xoffset * scaleX - padLeft);

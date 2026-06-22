@@ -171,6 +171,11 @@ public class Strings{
         return out.toString();
     }
 
+    /** Foo's addition: public parseColorMarkup without changing api. */
+    public static int parseColorMarkupPublic(CharSequence str, int start, int end) {
+        return parseColorMarkup(str, start, end);
+    }
+
     private static int parseColorMarkup(CharSequence str, int start, int end){
         if(start >= end) return -1; // String ended with "[".
         switch(str.charAt(start)){
