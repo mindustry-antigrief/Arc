@@ -78,6 +78,7 @@ public class PixmapPacker implements Disposable{
     boolean disposed;
     int pageWidth, pageHeight;
     int padding;
+    boolean allowMultiplePages = true;
     boolean duplicateBorder;
     boolean stripWhitespaceX, stripWhitespaceY;
     Color transparentColor = new Color(0f, 0f, 0f, 0f);
@@ -116,6 +117,10 @@ public class PixmapPacker implements Disposable{
         this.stripWhitespaceX = stripWhitespaceX;
         this.stripWhitespaceY = stripWhitespaceY;
         this.packStrategy = packStrategy;
+    }
+
+    public void setAllowMultiplePages(boolean allowMultiplePages){
+        this.allowMultiplePages = allowMultiplePages;
     }
 
     /**
@@ -638,10 +643,10 @@ public class PixmapPacker implements Disposable{
      * @author Rob Rendell
      */
     public static class Page{
-        final Seq<String> addedRects = new Seq<>();
-        OrderedMap<String, PixmapPackerRect> rects = new OrderedMap<>();
-        Pixmap image;
-        Texture texture;
+        public final Seq<String> addedRects = new Seq<>();
+        public OrderedMap<String, PixmapPackerRect> rects = new OrderedMap<>();
+        public Pixmap image;
+        public Texture texture;
         boolean dirty;
 
         /** Creates a new page filled with the color provided by the {@link PixmapPacker#getTransparentColor()} */
@@ -709,6 +714,7 @@ public class PixmapPacker implements Disposable{
      * @author Rob Rendell
      */
     public static class GuillotineStrategy implements PackStrategy{
+        boolean full;
 
         @Override
         public void sort(Seq<PixmapRegion> pixmaps){
@@ -732,11 +738,13 @@ public class PixmapPacker implements Disposable{
             rect.height += padding;
             Node node = insert(page.root, rect);
             if(node == null){
+                if(!packer.allowMultiplePages) throw new ArcRuntimeException("Failed to fit sprites into one page");
                 // Didn't fit, pack into a new page.
                 page = new GuillotinePage(packer);
                 packer.pages.add(page);
                 node = insert(page.root, rect);
             }
+            if(node == null) throw new ArcRuntimeException("Failed to pack sprite '" + name + "' of size " + (int)rect.width + "x" + (int)rect.height + " into page of size " + (int)page.root.rect.width + "x" + (int)page.root.rect.height);
             node.full = true;
             rect.set(node.rect.x, node.rect.y, node.rect.width - padding, node.rect.height - padding);
             return page;
@@ -891,8 +899,8 @@ public class PixmapPacker implements Disposable{
     public static class PixmapPackerRect extends Rect{
         public int[] splits;
         public int[] pads;
-        int offsetX, offsetY;
-        int originalWidth, originalHeight;
+        public int offsetX, offsetY;
+        public int originalWidth, originalHeight;
 
         public PixmapPackerRect(int x, int y, int width, int height){
             super(x, y, width, height);

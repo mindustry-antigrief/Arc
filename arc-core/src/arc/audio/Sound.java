@@ -26,14 +26,31 @@ import static arc.audio.Soloud.*;
  */
 public class Sound extends AudioSource implements DownloadableAudio{
     public AudioBus bus = Core.audio == null ? null : Core.audio.soundBus;
+
     public @Nullable Fi file;
 
-    private float falloffOffset = 0f;
-    private long minInterval = 16;
-
+    float falloffOffset = 0f;
+    long minInterval = 16;
     long lastTimePlayed;
     int lastVoice;
     float lastVolume;
+    boolean stream;
+
+    boolean lazyLoad = false;
+    volatile boolean currentlyLoading;
+
+    /** Creates music from an external file without copying it. */
+    public static Sound createStream(Fi file){
+        Sound sound = new Sound();
+        try{
+            sound.file = file;
+            sound.stream = true;
+            sound.handle = streamLoadFile(file.path());
+        }catch(Throwable e){
+            Log.err("Failed loading sound from " + file, e);
+        }
+        return sound;
+    }
 
     /** Creates an empty sound. This sound cannot be played until it is loaded. */
     public Sound(){
@@ -45,21 +62,23 @@ public class Sound extends AudioSource implements DownloadableAudio{
         load(file);
     }
 
-    public void load(Fi file){
-        byte[] data = file.readBytes();
-        this.file = file;
-        try {
-            handle = wavLoad(data, data.length);
+    public void load(byte[] data, boolean stream){
+        this.stream = stream;
+        handle = stream ? streamLoadBytes(data, data.length) : wavLoadBytes(data, data.length);
 
-            if(Core.audio != null && Core.audio.defaultSoundMaxConcurrent > 0){
-                setMaxConcurrent(Core.audio.defaultSoundMaxConcurrent);
-            }
-        } catch (ArcRuntimeException e) {
-            if (!(file instanceof ZipFi) && e.getMessage().contains("File found")) {
-                file.delete();
-                throw new ArcRuntimeException(file.absolutePath(), e);
-            } else throw e;
+        if(Core.audio != null && Core.audio.defaultSoundMaxConcurrent > 0){
+            setMaxConcurrent(Core.audio.defaultSoundMaxConcurrent);
         }
+    }
+
+    public void load(Fi file){
+        this.file = file;
+        load(file.readBytes(), false);
+    }
+
+    public void loadLazy(Fi file){
+        this.file = file;
+        this.lazyLoad = true;
     }
 
     /**
@@ -71,7 +90,29 @@ public class Sound extends AudioSource implements DownloadableAudio{
      * @return the id of the sound instance if successful, or -1 on failure.
      */
     public int play(float volume, float pitch, float pan, boolean loop, boolean checkFrame){
-        if(handle == 0 || bus == null || !Core.audio.initialized) return -1;
+        if(!Core.audio.initialized || currentlyLoading) return -1;
+
+        if(handle == 0 && lazyLoad && !currentlyLoading && file != null){
+            currentlyLoading = true;
+            float fvolume = volume, fpitch = pitch, fpan = pan;
+            Core.executor.submit(() -> {
+                try{
+                    //make sure it doesn't attempt lazy loading again
+                    lazyLoad = false;
+                    load(file);
+                    setParamsAfterLoad();
+                    currentlyLoading = false;
+
+                    if(!loop){
+                        play(fvolume, fpitch, fpan, loop, checkFrame);
+                    }
+                }catch(Throwable err){
+                    Log.err("Error loading sound: " + file, err);
+                }
+            });
+        }
+
+        if(handle == 0 || bus == null) return -1;
 
         if((checkFrame && Time.timeSinceMillis(lastTimePlayed) <= minInterval)){
             //when a sound was already played this frame, intensify the volume of the last played voice instead of playing a new one
@@ -95,11 +136,6 @@ public class Sound extends AudioSource implements DownloadableAudio{
     /** Sets the bus that will be used for the next play of this SFX. */
     public void setBus(AudioBus bus){
         this.bus = bus;
-    }
-
-    public void stop(){
-        if(handle == 0) return;
-        sourceStop(handle);
     }
 
     public float calcPan(float x, float y){
@@ -234,9 +270,10 @@ public class Sound extends AudioSource implements DownloadableAudio{
     }
 
     /** @return length in seconds */
+    @Override
     public float getLength(){
-        if(handle == 0 || !Core.audio.initialized) return  0f;
-        return (float)Soloud.wavLength(handle);
+        if(handle == 0 || !Core.audio.initialized) return 0f;
+        return stream ? (float)Soloud.streamLength(handle) : (float)Soloud.wavLength(handle);
     }
 
     /** Sets the minimum interval for playbacks of this sound, in milliseconds. Additional playback within this interval will not play a new sound instance. */

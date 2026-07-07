@@ -30,10 +30,23 @@ import static arc.audio.Soloud.*;
  * @author mzechner
  */
 public class Music extends AudioSource implements DownloadableAudio{
-    @Nullable Fi file;
+    public @Nullable Fi file;
+
     int voice = -1;
     boolean looping;
     float volume = 1f, pitch = 1f, pan = 0f;
+
+    /** Creates music from an external file without copying it. */
+    public static Music create(Fi file){
+        Music music = new Music();
+        try{
+            music.file = file;
+            music.handle = streamLoadFile(file.path());
+        }catch(Throwable e){
+            Log.err("Failed loading music from " + file, e);
+        }
+        return music;
+    }
 
     /** Loads music from a file. */
     public Music(Fi file) throws Exception{
@@ -49,6 +62,11 @@ public class Music extends AudioSource implements DownloadableAudio{
     public void load(Fi file){
         load(file, false);
     }
+
+    public void load(byte[] bytes) throws Exception{
+        handle = streamLoadBytes(bytes, bytes.length);
+    }
+
 
     @Override
     public void load(Fi file, boolean alreadyRenamed){
@@ -76,10 +94,10 @@ public class Music extends AudioSource implements DownloadableAudio{
 
     private ArcRuntimeException loadDirectly(Fi dest){
         try{
-            handle = streamLoad(dest.file().getCanonicalPath());
+            handle = streamLoadFile(dest.file().getCanonicalPath());
         }catch(Exception e){
             try{
-                handle = streamLoad(dest.file().getAbsolutePath());
+                handle = streamLoadFile(dest.file().getAbsolutePath());
             }catch(Exception ex){
                 return new ArcRuntimeException("Error loading music: " + dest.absolutePath(), ex);
             }
@@ -105,10 +123,9 @@ public class Music extends AudioSource implements DownloadableAudio{
         idPause(voice, pause);
     }
 
+    @Override
     public void stop(){
-        if(handle == 0 || voice <= 0) return;
-
-        sourceStop(handle);
+        super.stop();
         voice = 0;
     }
 
@@ -160,6 +177,13 @@ public class Music extends AudioSource implements DownloadableAudio{
         if(handle == 0 || voice <= 0) return;
 
         idSeek(voice, position);
+    }
+
+    /** @return length in seconds */
+    @Override
+    public float getLength(){
+        if(handle == 0 || !Core.audio.initialized) return 0f;
+        return (float)Soloud.streamLength(handle);
     }
 
     @Override

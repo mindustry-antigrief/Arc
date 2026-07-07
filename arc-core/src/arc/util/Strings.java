@@ -7,16 +7,70 @@ import arc.struct.*;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.*;
+import java.security.*;
+import java.text.*;
 import java.util.*;
 import java.util.regex.*;
 
 public class Strings{
+    public static final Charset utf8 = Charset.forName("UTF-8");
+    public static final Charset ascii = Charset.forName("US-ASCII");
+
+    private static final byte[] hexArray = "0123456789ABCDEF".getBytes(ascii);
     private static StringBuilder tmp1 = new StringBuilder(), tmp2 = new StringBuilder();
     private static Pattern
         filenamePattern = Pattern.compile("[\0/\"<>|:*?\\\\]"),
+        unsafeFilenamePattern = Pattern.compile("[\0/\"'<>|:*!?\\\\]"),
         reservedFilenamePattern = Pattern.compile("(CON|AUX|PRN|NUL|(COM[0-9])|(LPT[0-9]))((\\..*$)|$)", Pattern.CASE_INSENSITIVE);
 
-    public static final Charset utf8 = Charset.forName("UTF-8");
+    /** @return sha256 hash of the given string */
+    public static byte[] sha256(String str){
+        try{
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return digest.digest(str.getBytes(utf8));
+        }catch(NoSuchAlgorithmException e){
+            throw new ArcRuntimeException(e);
+        }
+    }
+
+    //https://stackoverflow.com/a/3758880
+    public static String formatByteCount(long bytes){
+        if(-1000 < bytes && bytes < 1000) return bytes + " B";
+
+        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+        while(bytes <= -999_950 || bytes >= 999_950){
+            bytes /= 1000;
+            ci.next();
+        }
+        return String.format("%.1f %cB", bytes / 1000.0, ci.current());
+    }
+
+    //https://stackoverflow.com/a/9855338
+    public static String bytesToHex(byte[] bytes){
+        byte[] hexChars = new byte[bytes.length * 2];
+        for(int j = 0; j < bytes.length; j++){
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars, utf8);
+    }
+
+    public static String getFileExtension(String path){
+        int dotIndex = path.lastIndexOf('.');
+        return dotIndex == -1 ? "" : path.substring(dotIndex + 1);
+    }
+
+    public static String getFileName(String path){
+        int index = path.lastIndexOf('/');
+        return index < 0 ? path : path.substring(index + 1);
+    }
+
+    public static String getFileNameWithoutExtension(String path){
+        String name = getFileName(path);
+        int dotIndex = name.lastIndexOf('.');
+        return dotIndex == -1 ? name : name.substring(0, dotIndex);
+    }
 
     /** @return whether the name matches the query; case-insensitive. Always returns true if query is empty. */
     public static boolean matches(String query, String name){
@@ -237,6 +291,10 @@ public class Strings{
             str = "_" + str;
         }
         return filenamePattern.matcher(str).replaceAll("_");
+    }
+
+    public static boolean isSafeFilename(String name){
+        return !name.equals(".") && !name.equals("..") && !reservedFilenamePattern.matcher(name).matches() && !unsafeFilenamePattern.matcher(name).find();
     }
 
     public static String encode(String str){
@@ -610,6 +668,7 @@ public class Strings{
     }
 
     public static boolean canParseFloat(String s){
+        if(s.isEmpty()) return false;
         try{
             Float.parseFloat(s);
             return true;
@@ -632,6 +691,7 @@ public class Strings{
     }
 
     public static float parseFloat(String s, float defaultValue){
+        if(s.isEmpty()) return defaultValue;
         try{
             return Float.parseFloat(s);
         }catch(Exception e){
