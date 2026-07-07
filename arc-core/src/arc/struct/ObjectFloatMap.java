@@ -191,14 +191,6 @@ public class ObjectFloatMap<K> implements Iterable<ObjectFloatMap.Entry<K>>{
         }
     }
 
-    public ObjectFloatMap<K> putAll(Object... values){
-        for(int i = 0; i < values.length / 2; i++){
-            put((K)values[i * 2], (float)values[i * 2 + 1]);
-        }
-
-        return this;
-    }
-
     public ObjectFloatMap<K> copy(){
         return new ObjectFloatMap<>(this);
     }
