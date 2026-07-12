@@ -164,7 +164,7 @@ public class Http{
         public ObjectMap<String, String> headers = new ObjectMap<>();
         /**The time to wait for the HTTP request to be processed, use 0 to block until it is done. The timeout is used for both
          * the timeout when establishing TCP connection, and the timeout until the first byte of data is received.*/
-        public int timeout = 2000;
+        public int timeout = 8000;
 
         /**The content to be used in the HTTP request: A string encoded in the corresponding Content-Encoding set in the headers, with the data to send with the
          * HTTP request. For example, in case of HTTP GET, the content is used as the query string of the GET while on a
@@ -345,6 +345,7 @@ public class Http{
         CONTINUE(100),
         SWITCHING_PROTOCOLS(101),
         PROCESSING(102),
+        EARLY_HINTS(103),
 
         //2xx - success
         OK(200),
@@ -355,6 +356,8 @@ public class Http{
         RESET_CONTENT(205),
         PARTIAL_CONTENT(206),
         MULTI_STATUS(207),
+        ALREADY_REPORTED(208),
+        IM_USED(226),
 
         //3xx - redirects
         MULTIPLE_CHOICES(300),
@@ -363,7 +366,9 @@ public class Http{
         SEE_OTHER(303),
         NOT_MODIFIED(304),
         USE_PROXY(305),
+        SWITCH_PROXY(306),
         TEMPORARY_REDIRECT(307),
+        PERMANENT_REDIRECT(308),
 
         //4xx - client error
         BAD_REQUEST(400),
@@ -387,9 +392,16 @@ public class Http{
         IM_A_TEAPOT(418),
         INSUFFICIENT_SPACE_ON_RESOURCE(419),
         METHOD_FAILURE(420),
+        MISDIRECTED_REQUEST(421),
         UNPROCESSABLE_ENTITY(422),
         LOCKED(423),
         FAILED_DEPENDENCY(424),
+        TOO_EARLY(425),
+        UPGRADE_REQUIRED(426),
+        PRECONDITION_REQUIRED(428),
+        TOO_MANY_REQUESTS(429),
+        REQUEST_HEADER_FIELDS_TOO_LARGE(431),
+        UNAVAILABLE_FOR_LEGAL_REASONS(451),
 
         //5xx - server error
         INTERNAL_SERVER_ERROR(500),
@@ -398,7 +410,11 @@ public class Http{
         SERVICE_UNAVAILABLE(503),
         GATEWAY_TIMEOUT(504),
         HTTP_VERSION_NOT_SUPPORTED(505),
-        INSUFFICIENT_STORAGE(507);
+        VARIANT_ALSO_NEGOTIATES(506),
+        INSUFFICIENT_STORAGE(507),
+        LOOP_DETECTED(508),
+        NOT_EXTENDED(510),
+        NETWORK_AUTHENTICATION_REQUIRED(511);
 
         private static final IntMap<HttpStatus> byCode = new IntMap<>();
 
