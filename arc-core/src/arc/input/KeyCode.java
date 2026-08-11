@@ -1,6 +1,7 @@
 package arc.input;
 
 import arc.*;
+import arc.util.*;
 import arc.input.KeyBind.*;
 
 /** Enum for storing input codes of mouse, keyboard and controllers. */
@@ -50,8 +51,8 @@ public enum KeyCode implements KeybindValue{
     num8(KeyType.key, "8"),
     num9(KeyType.key, "9"),
     a(KeyType.key, "A"),
-    altLeft(KeyType.key, "L-Alt"),
-    altRight(KeyType.key, "R-Alt"),
+    altLeft(KeyType.key, "L-Alt", "Alt"),
+    altRight(KeyType.key, "R-Alt", "Alt"),
     apostrophe(KeyType.key, "'"),
     at(KeyType.key, "@"),
     b(KeyType.key, "B"),
@@ -119,8 +120,8 @@ public enum KeyCode implements KeybindValue{
     s(KeyType.key, "S"),
     search(KeyType.key, "Search"),
     semicolon(KeyType.key, ";"),
-    shiftLeft(KeyType.key, "L-Shift"),
-    shiftRight(KeyType.key, "R-Shift"),
+    shiftLeft(KeyType.key, "L-Shift", "Shift"),
+    shiftRight(KeyType.key, "R-Shift", "Shift"),
     slash(KeyType.key, "/"),
     softLeft(KeyType.key, "Soft Left"),
     softRight(KeyType.key, "Soft Right"),
@@ -145,8 +146,8 @@ public enum KeyCode implements KeybindValue{
     metaShiftOn(KeyType.key, "Soft Left"),
     metaShiftRightOn(KeyType.key, "null"),
     metaSymOn(KeyType.key, "Back"),
-    controlLeft(KeyType.key, "L-Ctrl"),
-    controlRight(KeyType.key, "R-Ctrl"),
+    controlLeft(KeyType.key, "L-Ctrl", "Ctrl"),
+    controlRight(KeyType.key, "R-Ctrl", "Ctrl"),
     escape(KeyType.key, "Escape"),
     end(KeyType.key, "End"),
     insert(KeyType.key, "Insert"),
@@ -201,22 +202,40 @@ public enum KeyCode implements KeybindValue{
     printScreen(KeyType.key, "Print Screen"),
     scrollLock(KeyType.key, "Scroll Lock");
 
+    static {
+        controlLeft.equivalentModifier = controlRight;
+        controlRight.equivalentModifier = controlLeft;
+        shiftLeft.equivalentModifier = shiftRight;
+        shiftRight.equivalentModifier = shiftLeft;
+        altLeft.equivalentModifier = altRight;
+        altRight.equivalentModifier = altLeft;
+    }
+
     public static final KeyCode[] all = values();
     public static final KeyCode[] numbers = {num0, num1, num2, num3, num4, num5, num6, num7, num8, num9};
     public final KeyType type;
     public final String value;
     public final boolean axis;
+    public final String modifierName;
+    public @Nullable KeyCode equivalentModifier = null;
 
     private String cachedName;
 
     KeyCode(KeyType type, String value){
-        this(type, value, false);
+        this(type, value, false, null);
+    }
+    KeyCode(KeyType type, String value, @Nullable String modifierName){
+        this(type, value, false, modifierName);
     }
 
     KeyCode(KeyType type, String value, boolean axis){
+        this(type, value, axis, null);
+    }
+    KeyCode(KeyType type, String value, boolean axis, @Nullable String modifierName){
         this.type = type;
         this.value = value;
         this.axis = axis;
+        this.modifierName = modifierName;
     }
 
     public static KeyCode byOrdinal(int id){
@@ -231,6 +250,11 @@ public enum KeyCode implements KeybindValue{
             if(cachedName == null || cachedName.isEmpty()) cachedName = value;
         }
         return cachedName;
+    }
+
+    public String getModifierName(){
+        if(modifierName != null) return modifierName;
+        else return getName();
     }
 
     @Override

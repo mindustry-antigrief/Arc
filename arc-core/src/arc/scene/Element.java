@@ -878,6 +878,19 @@ public class Element{
         });
     }
 
+    public void keyDown(KeyBind key, Runnable l){
+        keyDown(k -> {
+            if(k == key.value.key){
+                if(Core.input != null){
+                    for(KeyCode mod : key.value.modifiers){
+                        if(!Core.input.modifierDown(mod)) return;
+                    }
+                }
+                l.run();
+            }
+        });
+    }
+
     /** Adds a keydown input listener. */
     public void keyDown(Cons<KeyCode> cons){
         addListener(new InputListener(){

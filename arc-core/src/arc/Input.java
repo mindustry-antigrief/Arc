@@ -176,6 +176,11 @@ public abstract class Input{
         return keyboard.isPressed(key);
     }
 
+    /** Returns whether the key is pressed. */
+    public boolean modifierDown(KeyCode key){
+        return keyboard.isPressed(key) || key.equivalentModifier != null && keyboard.isPressed(key.equivalentModifier);
+    }
+
     /** Returns whether the key has just been pressed. */
     public boolean keyTap(KeyCode key){
         return keyboard.isTapped(key);
@@ -186,6 +191,11 @@ public abstract class Input{
         return keyboard.isReleased(key);
     }
 
+    /** Returns whether the key is pressed. */
+    public boolean modifierUp(KeyCode key){
+        return keyboard.isReleased(key) || key.equivalentModifier != null && keyboard.isReleased(key.equivalentModifier);
+    }
+
     /** Returns the [-1, 1] axis value of a key. */
     public float axis(KeyCode key){
         return keyboard.getAxis(key);
@@ -194,7 +204,7 @@ public abstract class Input{
     /** Returns whether the keybind is pressed. */
     public boolean keyDown(KeyBind key){
         for(KeyCode mod : key.value.modifiers){
-            if(!keyboard.isPressed(mod)) return false;
+            if(!modifierDown(mod)) return false;
         }
         return key.value.key != null && keyboard.isPressed(key.value.key);
     }
@@ -202,7 +212,7 @@ public abstract class Input{
     /** Returns whether the key has just been pressed. */
     public boolean keyTap(KeyBind key){
         for(KeyCode mod : key.value.modifiers){
-            if(!keyboard.isPressed(mod)) return false;
+            if(!modifierDown(mod)) return false;
         }
         return key.value.key != null && keyboard.isTapped(key.value.key);
     }
@@ -214,16 +224,16 @@ public abstract class Input{
             //Binding is currently held, but the keybind is still released if some of the modifiers were released and all others were held
             boolean someReleased = false;
             for(KeyCode mod : key.value.modifiers){
-                if(keyboard.isReleased(mod)){
+                if(modifierUp(mod)){
                     someReleased = true;
-                } else if(!keyboard.isPressed(mod)){
+                } else if(!modifierDown(mod)){
                     return false;
                 } //else if pressed, that's fine
             }
             return someReleased;
         } else if(keyboard.isReleased(key.value.key)){
             for(KeyCode mod : key.value.modifiers){
-                if(!keyboard.isPressed(mod)) return false;
+                if(!modifierDown(mod)) return false;
             }
             return keyboard.isReleased(key.value.key);
         } else return false;
@@ -233,7 +243,7 @@ public abstract class Input{
     public float axis(KeyBind key){
         Axis axis = key.value;
         for(KeyCode mod : axis.modifiers){
-            if(!keyboard.isPressed(mod)) return 0f;
+            if(!modifierDown(mod)) return 0f;
         }
         if(axis.key != null){
             return keyboard.getAxis(axis.key);
@@ -248,7 +258,7 @@ public abstract class Input{
     public float axisTap(KeyBind key){
         Axis axis = key.value;
         for(KeyCode mod : axis.modifiers){
-            if(!keyboard.isPressed(mod)) return 0f;
+            if(!modifierDown(mod)) return 0f;
         }
         if(axis.key != null){
             return keyboard.getAxis(axis.key);

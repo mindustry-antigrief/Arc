@@ -33,6 +33,17 @@ public class KeyBind{
         return new KeyBind(name, defaultValue, null);
     }
 
+    /**
+     * Registers a new key binding without a category. Not for use in mods. Use the constructor with a category.
+     * @param name Unique name of the keybind.
+     * @param defaultValue The default value for this key; can be an Axis or a KeyCode.
+     */
+    public static KeyBind add(String name, KeyCode defaultValue, KeyCode... modifiers){
+        Axis axis = new Axis(defaultValue);
+        axis.modifiers = modifiers;
+        return new KeyBind(name, axis, null);
+    }
+
     public static void resetAll(){
         for(KeyBind def : all){
             def.resetToDefault();
