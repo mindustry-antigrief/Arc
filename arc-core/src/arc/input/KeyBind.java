@@ -2,6 +2,7 @@ package arc.input;
 
 import arc.struct.*;
 import arc.util.*;
+import java.util.*;
 
 import static arc.Core.*;
 
@@ -60,6 +61,15 @@ public class KeyBind{
             settings.put(name + "-min", value.min.ordinal());
             settings.put(name + "-max", value.max.ordinal());
         }
+        if(value.modifiers.length > 0){
+            byte[] modifierIDs = new byte[value.modifiers.length];
+            for(int i = 0; i < value.modifiers.length; i ++){
+                modifierIDs[i] = (byte)value.modifiers[i].ordinal();
+            }
+            settings.put(name + "-modifiers", modifierIDs);
+        } else {
+            settings.remove(name + "-modifiers");
+        }
     }
 
     /** Loads this keybind from settings. Calling this manually should not be necessary in most cases. */
@@ -76,6 +86,13 @@ public class KeyBind{
             KeyCode max = KeyCode.byOrdinal(settings.getInt(name + "-max", KeyCode.anyKey.ordinal()));
             loaded = min == KeyCode.anyKey || max == KeyCode.anyKey ? null : new Axis(min, max);
         }
+        @Nullable byte[] modifierIDs = settings.getBytes(name + "-modifiers", null);
+        if(loaded != null && modifierIDs != null){
+            loaded.modifiers = new KeyCode[modifierIDs.length];
+            for(int i = 0; i < modifierIDs.length; i ++){
+                loaded.modifiers[i] = KeyCode.byOrdinal(modifierIDs[i] & 0xFF);
+            }
+        }
 
         if(loaded != null){
             value = loaded;
@@ -88,6 +105,7 @@ public class KeyBind{
         settings.remove(name + "-key");
         settings.remove(name + "-min");
         settings.remove(name + "-max");
+        settings.remove(name + "-modifiers");
 
         if(defaultValue instanceof Axis){
             if(((Axis)defaultValue).min == null){
@@ -95,6 +113,7 @@ public class KeyBind{
             }else{
                 value = new Axis(((Axis)defaultValue).min, ((Axis)defaultValue).max);
             }
+            value.modifiers = ((Axis)defaultValue).modifiers;
         }else{
             value = new Axis((KeyCode)defaultValue);
         }
@@ -106,18 +125,19 @@ public class KeyBind{
         settings.remove(name + "-key");
         settings.remove(name + "-min");
         settings.remove(name + "-max");
+        settings.remove(name + "-modifiers");
         value = new Axis(KeyCode.unset);
     }
 
     public boolean isDefault(){
         if(defaultValue instanceof Axis){
             if(((Axis)defaultValue).min == null){
-                return ((Axis)defaultValue).key == value.key;
+                return ((Axis)defaultValue).key == value.key && Arrays.equals(((Axis)defaultValue).modifiers, value.modifiers);
             }else{
-                return ((Axis)defaultValue).max == value.max && ((Axis)defaultValue).min == value.min;
+                return ((Axis)defaultValue).max == value.max && ((Axis)defaultValue).min == value.min && Arrays.equals(((Axis)defaultValue).modifiers, value.modifiers);
             }
         }else{
-            return defaultValue == value.key;
+            return defaultValue == value.key && value.modifiers.length == 0;
         }
     }
 
@@ -135,6 +155,9 @@ public class KeyBind{
     public static class Axis implements KeybindValue{
         public @Nullable KeyCode min, max;
         public @Nullable KeyCode key;
+        private static final KeyCode[] EMPTY = new KeyCode[0];
+        /** Do not modify the array's slots, create a new one instead. */
+        public KeyCode[] modifiers = EMPTY;
 
         /** Cosntructor for axis-type keys only. */
         public Axis(KeyCode key){
@@ -156,6 +179,10 @@ public class KeyBind{
 
             Axis axis = (Axis)o;
             return min == axis.min && max == axis.max && key == axis.key;
+        }
+
+        public void clearModifiers(){
+            modifiers = EMPTY;
         }
     }
 }

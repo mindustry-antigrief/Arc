@@ -193,22 +193,48 @@ public abstract class Input{
 
     /** Returns whether the keybind is pressed. */
     public boolean keyDown(KeyBind key){
+        for(KeyCode mod : key.value.modifiers){
+            if(!keyboard.isPressed(mod)) return false;
+        }
         return key.value.key != null && keyboard.isPressed(key.value.key);
     }
 
     /** Returns whether the key has just been pressed. */
     public boolean keyTap(KeyBind key){
+        for(KeyCode mod : key.value.modifiers){
+            if(!keyboard.isPressed(mod)) return false;
+        }
         return key.value.key != null && keyboard.isTapped(key.value.key);
     }
 
     /** Returns whether the key has just been released. */
     public boolean keyRelease(KeyBind key){
-        return key.value.key != null && keyboard.isReleased(key.value.key);
+        if(key.value.key == null) return false;
+        if(keyboard.isPressed(key.value.key)){
+            //Binding is currently held, but the keybind is still released if some of the modifiers were released and all others were held
+            boolean someReleased = false;
+            for(KeyCode mod : key.value.modifiers){
+                if(keyboard.isReleased(mod)){
+                    someReleased = true;
+                } else if(!keyboard.isPressed(mod)){
+                    return false;
+                } //else if pressed, that's fine
+            }
+            return someReleased;
+        } else if(keyboard.isReleased(key.value.key)){
+            for(KeyCode mod : key.value.modifiers){
+                if(!keyboard.isPressed(mod)) return false;
+            }
+            return keyboard.isReleased(key.value.key);
+        } else return false;
     }
 
     /** Returns the [-1, 1] axis value of a key. */
     public float axis(KeyBind key){
         Axis axis = key.value;
+        for(KeyCode mod : axis.modifiers){
+            if(!keyboard.isPressed(mod)) return 0f;
+        }
         if(axis.key != null){
             return keyboard.getAxis(axis.key);
         }else{
@@ -221,6 +247,9 @@ public abstract class Input{
      * In the case of keyboard-based axes, this will only return a value if one of the axes was just pressed. */
     public float axisTap(KeyBind key){
         Axis axis = key.value;
+        for(KeyCode mod : axis.modifiers){
+            if(!keyboard.isPressed(mod)) return 0f;
+        }
         if(axis.key != null){
             return keyboard.getAxis(axis.key);
         }else{
