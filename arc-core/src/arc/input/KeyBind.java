@@ -160,6 +160,28 @@ public class KeyBind{
         return "keybind-default-keyboard-" + name;
     }
 
+    public boolean includesShift(){
+        if(value == null) return false;
+        for(KeyCode m : value.modifiers){
+            if(m == KeyCode.shiftLeft || m == KeyCode.shiftRight) return true;
+        }
+        return false;
+    }
+    public boolean includesCtrl(){
+        if(value == null) return false;
+        for(KeyCode m : value.modifiers){
+            if(m == KeyCode.controlLeft || m == KeyCode.controlRight) return true;
+        }
+        return false;
+    }
+    public boolean includesAlt(){
+        if(value == null) return false;
+        for(KeyCode m : value.modifiers){
+            if(m == KeyCode.altLeft || m == KeyCode.altRight) return true;
+        }
+        return false;
+    }
+
     /** Represents an Axis or a KeyCode. */
     public interface KeybindValue{}
 

@@ -181,6 +181,16 @@ public abstract class Input{
         return keyboard.isPressed(key) || key.equivalentModifier != null && keyboard.isPressed(key.equivalentModifier);
     }
 
+    /** Returns whether the key is pressed. If it's a modifier key, accepts either the right or left. */
+    public boolean modifierDown(KeyBind key){
+        return modifierDown(key, false);
+    }
+    public boolean modifierDown(KeyBind key, boolean ifUnset){
+        if(key.value == null) return false;
+        else if(key.value.key == KeyCode.unset) return ifUnset; //Unset modifiers are always held
+        return modifierDown(key.value.key);
+    }
+
     /** Returns whether the key has just been pressed. */
     public boolean keyTap(KeyCode key){
         return keyboard.isTapped(key);
