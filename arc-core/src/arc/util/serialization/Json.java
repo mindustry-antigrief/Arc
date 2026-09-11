@@ -7,7 +7,6 @@ import arc.struct.ObjectMap.*;
 import arc.struct.Queue;
 import arc.struct.OrderedMap.*;
 import arc.util.*;
-import arc.util.Timer;
 import arc.util.io.*;
 import arc.util.serialization.JsonValue.*;
 import arc.util.serialization.JsonWriter.*;
@@ -1224,7 +1223,7 @@ public class Json{
                 }
             }
             if(type == CharSequence.class) return (T)string;
-            throw new SerializationException("Unable to convert value to required type: " + jsonData + " (" + type.getName() + ")");
+            throw new SerializationException("Unable to convert '" + jsonData + "' to " + (type.isArray() ? type.getComponentType() + "[]" : type.getName()));
         }
 
         return null;
@@ -1259,8 +1258,12 @@ public class Json{
         Class<T> type = getClass(className);
         if(type == null){
             try{
-                type = (Class<T>)Class.forName(className);
-                if(Timer.class.isAssignableFrom(type)) throw new RuntimeException("Invalid class type.");
+                type = (Class<T>)Class.forName(className, false, getClass().getClassLoader());
+                if(JsonSerializable.class.isAssignableFrom(type) || AllowSerialization.class.isAssignableFrom(type)
+                    || type == String.class || type == Long.class || type == Integer.class || type == Short.class || type == Byte.class|| type == Boolean.class || type == Character.class){
+                    return type;
+                }
+                throw new SerializationException("Class must implement JsonSerializable or AllowSerialization: " + className);
             }catch(Throwable ex){
                 throw new SerializationException(ex);
             }
